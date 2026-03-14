@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2 } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { UploadModal } from "./UploadModal";
 import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardTab } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
@@ -42,6 +43,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
   const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
+  const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -66,9 +68,10 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
       const plan = await generateLessonPlan({
         summary: selectedResource.summary,
         keyActivities: selectedResource.keyActivities,
+        language: planLanguage,
       });
       setLessonPlan(plan);
-      toast({ title: "Lesson Plan Ready", description: "The AI has created a new curriculum plan based on this resource." });
+      toast({ title: "Lesson Plan Ready", description: `A new curriculum plan has been created in ${planLanguage}.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Generation Failed", description: "Could not create lesson plan." });
     } finally {
@@ -349,28 +352,52 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                         {lessonPlan.steps.map((s, i) => <li key={i}>{s}</li>)}
                       </ol>
                     </div>
+                    <div className="pt-2 border-t text-xs italic text-muted-foreground">
+                      Generated in {planLanguage}
+                    </div>
                   </CardContent>
                 </Card>
               )}
 
-              <div className="pt-6 grid grid-cols-2 gap-4">
-                <Button 
-                  onClick={handleGenerateLessonPlan} 
-                  disabled={isGeneratingPlan}
-                  variant="outline" 
-                  className="font-headline font-bold gap-2"
-                >
-                  {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
-                  Generate Lesson Plan
-                </Button>
-                <Button 
-                  onClick={handleGenerateMagicMoment}
-                  disabled={isGeneratingVideo}
-                  className="font-headline font-bold bg-accent hover:bg-accent/90 gap-2"
-                >
-                  {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                  Create Magic Moment
-                </Button>
+              <div className="pt-6 space-y-6">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Lesson Plan Language</label>
+                      <Select value={planLanguage} onValueChange={(val: any) => setPlanLanguage(val)}>
+                        <SelectTrigger className="w-full bg-muted/30">
+                          <Languages className="w-4 h-4 mr-2" />
+                          <SelectValue placeholder="Select Language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="Tamil">Tamil (தமிழ்)</SelectItem>
+                          <SelectItem value="Hindi">Hindi (हिन्दी)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button 
+                      onClick={handleGenerateLessonPlan} 
+                      disabled={isGeneratingPlan}
+                      variant="outline" 
+                      className="font-headline font-bold gap-2"
+                    >
+                      {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
+                      Generate Lesson Plan
+                    </Button>
+                    <Button 
+                      onClick={handleGenerateMagicMoment}
+                      disabled={isGeneratingVideo}
+                      className="font-headline font-bold bg-accent hover:bg-accent/90 gap-2"
+                    >
+                      {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                      Create Magic Moment
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {selectedResource.transcript && (

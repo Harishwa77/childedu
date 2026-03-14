@@ -14,6 +14,7 @@ const LessonPlanInputSchema = z.object({
   summary: z.string().describe('The AI-generated summary of a classroom activity or resource.'),
   keyActivities: z.array(z.string()).describe('The key activities identified in the resource.'),
   targetAge: z.string().default('3-5 years').describe('The target age group for the lesson plan.'),
+  language: z.enum(['English', 'Tamil', 'Hindi']).default('English').describe('The language for the lesson plan.'),
 });
 export type LessonPlanInput = z.infer<typeof LessonPlanInputSchema>;
 
@@ -37,6 +38,8 @@ const lessonPlanPrompt = ai.definePrompt({
   prompt: `You are an expert curriculum designer for early childhood education.
 Based on the following activity summary and identified skills, create a comprehensive, structured lesson plan for children aged {{{targetAge}}}.
 
+CRITICAL: You must provide the entire output in the following language: {{{language}}}.
+
 Activity Summary:
 {{{summary}}}
 
@@ -45,7 +48,7 @@ Key Skills/Activities:
 - {{{this}}}
 {{/each}}
 
-Ensure the lesson plan is engaging, tactile, and encourages social-emotional growth.`,
+Ensure the lesson plan is engaging, tactile, and encourages social-emotional growth. All fields in the response must be in {{{language}}}.`,
 });
 
 const generateLessonPlanFlow = ai.defineFlow(
