@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { TranslationSelector } from "./TranslationSelector";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -39,6 +41,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<number[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [isMessaging, setIsMessaging] = useState(false);
   
   const [bedtimeStory, setBedtimeStory] = useState<BedtimeStoryOutput | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
@@ -106,6 +110,16 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     }
   };
 
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return;
+    setIsMessaging(true);
+    setTimeout(() => {
+      toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}.` });
+      setMessageText("");
+      setIsMessaging(false);
+    }, 1000);
+  };
+
   const connectionScore = Math.min(100, (completedActivities.length / (insights?.homeActivitySuggestions.length || 1)) * 100);
 
   const handleListen = async (text: string) => {
@@ -141,85 +155,149 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
           </p>
         </div>
         
-        <Dialog open={isRegDialogOpen} onOpenChange={setIsRegDialogOpen}>
-          <DialogTrigger asChild>
-            <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-colors group">
-              <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20">
-                <UserCircle className="w-6 h-6 text-primary" />
-              </div>
-              <div className="font-body text-sm">
-                <p className="font-bold text-primary">{childInfo.name}</p>
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                  <School className="w-3 h-3" /> {childInfo.className}
+        <div className="flex items-center gap-3">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 rounded-full border-primary/20">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                Contact Teacher
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Message {childInfo.mentorName}</DialogTitle>
+                <DialogDescription>Discuss {childInfo.name}'s progress or ask curriculum questions.</DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Your Message</Label>
+                  <Textarea 
+                    placeholder="How did the counting activity go today?" 
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    className="min-h-[120px]"
+                  />
                 </div>
               </div>
-            </Card>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-headline text-2xl">Child Registration</DialogTitle>
-              <DialogDescription>Update your child's information for the Knowledge Graph.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2"><Label>Child's Name</Label><Input value={tempChildInfo.name} onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})} /></div>
-              <div className="grid gap-2"><Label>Class</Label><Input value={tempChildInfo.className} onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})} /></div>
-              <div className="grid gap-2"><Label>Mentor</Label><Input value={tempChildInfo.mentorName} onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})} /></div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => { onRegisterChild(tempChildInfo); setIsRegDialogOpen(false); }} className="gap-2"><Save className="w-4 h-4" /> Save Registration</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button onClick={handleSendMessage} disabled={isMessaging || !messageText.trim()} className="gap-2">
+                  {isMessaging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Send Message
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isRegDialogOpen} onOpenChange={setIsRegDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-colors group">
+                <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20">
+                  <UserCircle className="w-6 h-6 text-primary" />
+                </div>
+                <div className="font-body text-sm">
+                  <p className="font-bold text-primary">{childInfo.name}</p>
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                    <School className="w-3 h-3" /> {childInfo.className}
+                  </div>
+                </div>
+              </Card>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Child Registration</DialogTitle>
+                <DialogDescription>Update your child's information for the Knowledge Graph.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2"><Label>Child's Name</Label><Input value={tempChildInfo.name} onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})} /></div>
+                <div className="grid gap-2"><Label>Class</Label><Input value={tempChildInfo.className} onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})} /></div>
+                <div className="grid gap-2"><Label>Mentor</Label><Input value={tempChildInfo.mentorName} onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})} /></div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => { onRegisterChild(tempChildInfo); setIsRegDialogOpen(false); }} className="gap-2"><Save className="w-4 h-4" /> Save Registration</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-none shadow-lg overflow-hidden">
+          <Card className="border-none shadow-lg overflow-hidden flex flex-col">
             <CardHeader className="bg-primary text-white p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <CardTitle className="font-headline text-2xl flex items-center gap-2"><Sparkles className="w-6 h-6" /> Skill Progress</CardTitle>
-                  <CardDescription className="text-white/80 font-body">Knowledge Graph Insight for {childInfo.name}</CardDescription>
+                  <CardDescription className="text-white/80 font-body">Current developmental proficiency</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                   <TranslationSelector 
-                    content={insights?.learningSummary || ""} 
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                    onTranslate={(val) => setInsights(insights ? { ...insights, learningSummary: val } : null)} 
-                  />
-                  <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
-                    {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
-                  </Button>
-                </div>
+                <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
+                  {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              {isLoading ? <div className="space-y-4"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-[90%]" /></div> : (
-                <div className="space-y-4">
-                  <p className="text-lg font-body leading-relaxed text-muted-foreground italic">"{insights?.learningSummary}"</p>
-                  <div className="flex gap-2">
-                    <Badge className="bg-primary/10 text-primary border-none">Mapped to Curriculum</Badge>
-                  </div>
+            <CardContent className="p-6 space-y-6 flex-1">
+              {isLoading ? (
+                <div className="space-y-6">
+                  {[1, 2, 3, 4].map(i => <div key={i} className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-2 w-full" /></div>)}
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {[
+                    { label: "Language Skills", val: childData?.skills?.language || 0, color: "bg-blue-500" },
+                    { label: "Numbers & Logic", val: childData?.skills?.numeracy || 0, color: "bg-emerald-500" },
+                    { label: "Social Interaction", val: childData?.skills?.social || 0, color: "bg-orange-500" },
+                    { label: "Motor & Creativity", val: childData?.skills?.motor || 0, color: "bg-purple-500" },
+                  ].map((skill, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex justify-between items-center text-sm font-body">
+                        <span className="font-semibold text-muted-foreground">{skill.label}</span>
+                        <span className="font-bold text-foreground">{skill.val}%</span>
+                      </div>
+                      <Progress value={skill.val} className="h-1.5" />
+                    </div>
+                  ))}
+                  <Separator />
+                  <p className="text-sm font-body italic text-muted-foreground">"{insights?.learningSummary}"</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-all">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                 <div className="p-4 bg-emerald-50 rounded-2xl"><Activity className="w-8 h-8 text-emerald-600" /></div>
-                 <div className="text-right">
-                   <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
-                   <p className="text-xs text-muted-foreground font-body">Home-School Alignment</p>
-                 </div>
+          <div className="space-y-6">
+            <Card className="hover:shadow-md transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <div className="p-4 bg-emerald-50 rounded-2xl"><Activity className="w-8 h-8 text-emerald-600" /></div>
+                   <div className="text-right">
+                     <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
+                     <p className="text-xs text-muted-foreground font-body">Home-School Alignment</p>
+                   </div>
+                </div>
+                <Progress value={connectionScore} className="h-2" />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-primary/5 border-primary/10 overflow-hidden relative">
+              <div className="absolute top-2 right-2 opacity-10">
+                <Lightbulb className="w-20 h-20 text-primary" />
               </div>
-              <Progress value={connectionScore} className="h-2" />
-            </CardContent>
-          </Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
+                  <Zap className="w-5 h-5" /> Today's Suggestion
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="font-body text-sm">
+                {insights?.homeActivitySuggestions && insights.homeActivitySuggestions.length > 0 ? (
+                  <div className="p-4 bg-white rounded-xl shadow-sm border border-primary/10 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">{insights.homeActivitySuggestions[0]}</p>
+                  </div>
+                ) : <Skeleton className="h-10 w-full" />}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
