@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ interface StudyInteraction {
   type: 'view' | 'quiz_complete' | 'flashcard_flip';
   performance?: number;
   timestamp: string;
+}
+
+interface TimelineEvent {
+  week: number;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  status: 'completed' | 'current' | 'upcoming';
 }
 
 interface ParentDashboardProps {
@@ -65,6 +73,13 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   
   const { toast } = useToast();
+
+  const timelineEvents: TimelineEvent[] = [
+    { week: 1, title: "Mastered Numbers 1-10", description: "Leo can now identify and count objects up to 10 with 90% accuracy.", icon: <TrendingUp className="w-4 h-4" />, status: 'completed' },
+    { week: 3, title: "Started Phonics A-M", description: "Began phonemic awareness with focus on initial letter sounds.", icon: <BookOpen className="w-4 h-4" />, status: 'completed' },
+    { week: 5, title: "Collaborative Storytelling", description: "Leo is currently learning to contribute plot ideas in group story time.", icon: <Sparkles className="w-4 h-4" />, status: 'current' },
+    { week: 7, title: "Shape Logic & Sorting", description: "Next focus will be on geometric classification and pattern recognition.", icon: <BrainCircuit className="w-4 h-4" />, status: 'upcoming' },
+  ];
 
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
@@ -416,6 +431,40 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
             </div>
           </div>
 
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                <CardTitle className="text-xl font-headline">Smart Learning Timeline</CardTitle>
+              </div>
+              <CardDescription className="font-body">Leo's growth milestones over the weeks</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-primary before:via-accent before:to-muted">
+                {timelineEvents.map((event, idx) => (
+                  <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-full border border-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10",
+                      event.status === 'completed' ? "bg-emerald-500 text-white" : 
+                      event.status === 'current' ? "bg-primary text-white animate-pulse" : "bg-muted text-muted-foreground"
+                    )}>
+                      {event.icon}
+                    </div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between space-x-2 mb-1">
+                        <div className="font-bold text-primary font-headline">Week {event.week}</div>
+                        {event.status === 'completed' && <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px]">Achieved</Badge>}
+                        {event.status === 'current' && <Badge className="bg-primary/10 text-primary border-none text-[10px]">In Progress</Badge>}
+                      </div>
+                      <div className="text-sm font-bold text-foreground mb-1">{event.title}</div>
+                      <div className="text-xs text-muted-foreground font-body leading-relaxed">{event.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="space-y-4">
             <h3 className="text-xl font-headline font-bold flex items-center gap-2">
               <Layers className="w-5 h-5 text-primary" />
@@ -684,25 +733,4 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       </Sheet>
     </div>
   );
-}
-
-function History(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-      <path d="M12 7v5l4 2" />
-    </svg>
-  )
 }
