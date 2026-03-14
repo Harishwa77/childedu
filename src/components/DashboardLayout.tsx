@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { LogOut, Bell, Search, UserCircle, GraduationCap, ArrowRightLeft } from "lucide-react";
+import { LogOut, Bell, Search, UserCircle, Gamepad2, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
@@ -78,14 +78,14 @@ export function DashboardLayout({
             </Button>
             <Button 
               variant="ghost" 
-              onClick={() => onTabChange("learning-hub")}
+              onClick={() => onTabChange("magic-games")}
               className={cn(
                 "text-sm font-medium transition-colors gap-2",
-                activeTab === "learning-hub" ? "text-primary bg-primary/5" : "text-muted-foreground"
+                activeTab === "magic-games" ? "text-primary bg-primary/5" : "text-muted-foreground"
               )}
             >
-              <GraduationCap className="w-4 h-4" />
-              Basics Hub
+              <Gamepad2 className="w-4 h-4" />
+              Magic Games
             </Button>
           </nav>
         </div>

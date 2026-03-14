@@ -121,7 +121,7 @@ export default function Home() {
   };
 
   const renderDashboard = () => {
-    if (activeTab === "learning-hub") {
+    if (activeTab === "magic-games") {
       return <KinderLearningHub />;
     }
 

@@ -3,7 +3,7 @@
  * Centrally managed to avoid circular dependencies.
  */
 
-export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
+export type DashboardTab = "dashboard" | "resources" | "insights" | "magic-games";
 
 export interface ResourceAnalysis {
   activityName: string;
