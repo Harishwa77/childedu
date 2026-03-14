@@ -32,16 +32,21 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   const { user } = useUser();
 
   const persistResource = (resourceData: any) => {
-    if (!db) return;
+    if (!db || !user?.uid) {
+      console.warn("Cannot persist resource: Firestore or User UID not available.");
+      return;
+    }
+
     const resourceId = resourceData.id;
     const docRef = doc(db, "educational_resources", resourceId);
     
     // Add uploader context and authorization map for security rules
+    // We strictly use user.uid and do not fallback to "anonymous" to satisfy security rules
     const finalData = {
       ...resourceData,
-      uploaderId: user?.uid || "anonymous",
+      uploaderId: user.uid,
       authorizedUids: {
-        [user?.uid || "anonymous"]: true
+        [user.uid]: true
       },
       createdAt: new Date().toISOString()
     };
@@ -85,7 +90,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   };
 
   const handleVoiceSubmit = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob || !user) return;
 
     setIsUploading(true);
     setProgress(20);
@@ -154,7 +159,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
 
     if (file.size > 50 * 1024 * 1024) {
       toast({
@@ -242,6 +247,15 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   };
 
   const handleYoutubeSubmit = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please wait for your session to initialize."
+      });
+      return;
+    }
+
     if (!youtubeUrl.trim() || !youtubeUrl.includes("youtube.com") && !youtubeUrl.includes("youtu.be")) {
       toast({
         variant: "destructive",
