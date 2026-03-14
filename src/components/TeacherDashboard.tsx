@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -12,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { DashboardTab, Resource } from "@/app/page";
+import { DashboardTab, Resource, UserMessage } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
@@ -45,9 +44,10 @@ interface TeacherDashboardProps {
   setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
   roster: Student[];
   setRoster: React.Dispatch<React.SetStateAction<Student[]>>;
+  messages: UserMessage[];
 }
 
-export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster }: TeacherDashboardProps) {
+export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster, messages }: TeacherDashboardProps) {
   const { toast } = useToast();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
@@ -133,6 +133,8 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     }
   };
 
+  const unreadMessagesCount = messages.filter(m => !m.read).length;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {activeTab === "dashboard" && (
@@ -174,7 +176,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-bold">2 New</p>
+              <p className="text-xl font-bold">{unreadMessagesCount} New</p>
             </CardContent>
           </Card>
         </div>
@@ -220,11 +222,8 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
             <TabsContent value="messages" className="pt-4">
               <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
                 <div className="space-y-4">
-                  {[
-                    { from: "Mrs. Johnson", subject: "Leo's Progress", text: "How did the counting activity go today?", date: "10 mins ago" },
-                    { from: "Mr. Wong", subject: "Mia's Attendance", text: "Mia will be 30 mins late tomorrow for a dentist appointment.", date: "2 hours ago" },
-                  ].map((msg, i) => (
-                    <Card key={i} className="hover:bg-accent/5 transition-colors cursor-pointer border-accent/10">
+                  {messages.length > 0 ? messages.map((msg) => (
+                    <Card key={msg.id} className={cn("hover:bg-accent/5 transition-colors cursor-pointer border-accent/10", !msg.read && "border-l-4 border-l-primary bg-primary/5")}>
                       <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
@@ -236,10 +235,15 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                         <CardTitle className="text-xs mt-2">{msg.subject}</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground font-body line-clamp-2">{msg.text}</p>
+                        <p className="text-sm text-muted-foreground font-body line-clamp-3">{msg.text}</p>
                       </CardContent>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 opacity-60 py-12">
+                      <Mail className="w-12 h-12" />
+                      <p className="font-headline text-lg">Your inbox is empty</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>

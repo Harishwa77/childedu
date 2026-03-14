@@ -31,9 +31,10 @@ interface ParentDashboardProps {
   roster: Student[];
   childInfo: ChildRegistrationInfo;
   onRegisterChild: (info: ChildRegistrationInfo) => void;
+  onSendMessage: (msg: { subject: string; text: string }) => void;
 }
 
-export function ParentDashboard({ searchQuery, activeTab, resources, roster, childInfo, onRegisterChild }: ParentDashboardProps) {
+export function ParentDashboard({ searchQuery, activeTab, resources, roster, childInfo, onRegisterChild, onSendMessage }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -41,7 +42,9 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<number[]>([]);
   const [messageText, setMessageText] = useState("");
+  const [messageSubject, setMessageSubject] = useState("");
   const [isMessaging, setIsMessaging] = useState(false);
+  const [isMsgDialogOpen, setIsMsgDialogOpen] = useState(false);
   
   const [bedtimeStory, setBedtimeStory] = useState<BedtimeStoryOutput | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
@@ -73,8 +76,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         });
         setInsights(res);
       } catch (error: any) {
-        // We handle the error silently here because the flow now returns a fallback response for 429s.
-        // For actual fatal errors, we show a toast.
         toast({
           variant: "destructive",
           title: "AI Analysis Limited",
@@ -118,10 +119,19 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
     setIsMessaging(true);
+    
+    // Manual send to teacher - will show in teacher's inbox
+    onSendMessage({
+      subject: messageSubject || `Regarding ${childInfo.name}`,
+      text: messageText
+    });
+
     setTimeout(() => {
-      toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}.` });
+      toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}. It will be checked manually by the teacher.` });
       setMessageText("");
+      setMessageSubject("");
       setIsMessaging(false);
+      setIsMsgDialogOpen(false);
     }, 1000);
   };
 
@@ -161,7 +171,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         </div>
         
         <div className="flex items-center gap-3">
-          <Dialog>
+          <Dialog open={isMsgDialogOpen} onOpenChange={setIsMsgDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 rounded-full border-primary/20">
                 <MessageCircle className="w-4 h-4 text-primary" />
@@ -174,6 +184,14 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 <DialogDescription>Discuss {childInfo.name}'s progress or ask curriculum questions.</DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Subject</Label>
+                  <Input 
+                    placeholder="e.g. Activity Question" 
+                    value={messageSubject}
+                    onChange={(e) => setMessageSubject(e.target.value)}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Your Message</Label>
                   <Textarea 

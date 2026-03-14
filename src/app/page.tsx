@@ -53,6 +53,15 @@ export interface ChildRegistrationInfo {
   mentorName: string;
 }
 
+export interface UserMessage {
+  id: string;
+  from: string;
+  subject: string;
+  text: string;
+  date: string;
+  read: boolean;
+}
+
 export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
@@ -63,6 +72,11 @@ export default function Home() {
     className: "Preschool Class B",
     mentorName: "Ms. Clara"
   });
+
+  const [messages, setMessages] = useState<UserMessage[]>([
+    { id: "m1", from: "Mrs. Johnson", subject: "Leo's Progress", text: "How did the counting activity go today?", date: "10 mins ago", read: false },
+    { id: "m2", from: "Mr. Wong", subject: "Mia's Attendance", text: "Mia will be 30 mins late tomorrow for a dentist appointment.", date: "2 hours ago", read: true },
+  ]);
 
   const [resources, setResources] = useState<Resource[]>([
     {
@@ -156,6 +170,18 @@ export default function Home() {
     });
   };
 
+  const handleSendMessageToTeacher = (msg: { subject: string; text: string }) => {
+    const newMsg: UserMessage = {
+      id: Math.random().toString(36).substring(2, 11),
+      from: `Parent of ${parentSessionInfo.name}`,
+      subject: msg.subject,
+      text: msg.text,
+      date: "Just now",
+      read: false
+    };
+    setMessages(prev => [newMsg, ...prev]);
+  };
+
   const renderDashboard = () => {
     if (activeTab === "learning-hub") {
       return <KinderLearningHub />;
@@ -163,9 +189,29 @@ export default function Home() {
 
     switch (activeRole) {
       case "teacher":
-        return <TeacherDashboard searchQuery={searchQuery} activeTab={activeTab} resources={resources} setResources={setResources} roster={roster} setRoster={setRoster} />;
+        return (
+          <TeacherDashboard 
+            searchQuery={searchQuery} 
+            activeTab={activeTab} 
+            resources={resources} 
+            setResources={setResources} 
+            roster={roster} 
+            setRoster={setRoster}
+            messages={messages}
+          />
+        );
       case "parent":
-        return <ParentDashboard searchQuery={searchQuery} activeTab={activeTab} resources={resources} roster={roster} childInfo={parentSessionInfo} onRegisterChild={handleRegisterChild} />;
+        return (
+          <ParentDashboard 
+            searchQuery={searchQuery} 
+            activeTab={activeTab} 
+            resources={resources} 
+            roster={roster} 
+            childInfo={parentSessionInfo} 
+            onRegisterChild={handleRegisterChild}
+            onSendMessage={handleSendMessageToTeacher}
+          />
+        );
       case "admin":
         return <AdminDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       default:
