@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle, Trash2, FileVideo, FileAudio, FileText, LayoutGrid } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { DashboardTab, UserMessage } from "@/app/types";
+import { DashboardTab, UserMessage, Resource } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UploadModal } from "./UploadModal";
+import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
 
 export interface Student {
@@ -41,6 +43,9 @@ interface TeacherDashboardProps {
   messages: UserMessage[];
   onSendMessage: (msg: { subject: string; text: string }) => void;
   onMarkRead: (id: string) => void;
+  resources: Resource[];
+  onUploadResource: (res: Resource) => void;
+  onDeleteResource: (id: string) => void;
 }
 
 export function TeacherDashboard({ 
@@ -50,7 +55,10 @@ export function TeacherDashboard({
   setRoster, 
   messages, 
   onSendMessage, 
-  onMarkRead 
+  onMarkRead,
+  resources,
+  onUploadResource,
+  onDeleteResource
 }: TeacherDashboardProps) {
   const { toast } = useToast();
   
@@ -60,7 +68,16 @@ export function TeacherDashboard({
   const [replyingTo, setReplyingTo] = useState<UserMessage | null>(null);
   const [replyText, setReplyText] = useState("");
 
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+
   const teacherMessages = useMemo(() => messages.filter(m => m.to === "Teacher"), [messages]);
+
+  const filteredResources = useMemo(() => {
+    return resources.filter(r => 
+      r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.summary?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [resources, searchQuery]);
 
   const toggleAttendance = (id: string) => {
     setRoster(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
@@ -109,44 +126,191 @@ export function TeacherDashboard({
     }
   };
 
+  const getResourceIcon = (type: string) => {
+    if (type.includes('video')) return <FileVideo className="w-5 h-5 text-blue-500" />;
+    if (type.includes('audio')) return <FileAudio className="w-5 h-5 text-emerald-500" />;
+    return <FileText className="w-5 h-5 text-orange-500" />;
+  };
+
+  if (activeTab === "resources") {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-headline font-bold text-foreground">Resource Library</h2>
+            <p className="text-muted-foreground font-body">Manage classroom lessons and activities.</p>
+          </div>
+          <UploadModal onUpload={onUploadResource} />
+        </div>
+
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="bg-muted/50 p-1 rounded-full h-12">
+            <TabsTrigger value="all" className="rounded-full px-6 gap-2"><LayoutGrid className="w-4 h-4" /> All</TabsTrigger>
+            <TabsTrigger value="video" className="rounded-full px-6 gap-2"><FileVideo className="w-4 h-4" /> Videos</TabsTrigger>
+            <TabsTrigger value="audio" className="rounded-full px-6 gap-2"><FileAudio className="w-4 h-4" /> Audio</TabsTrigger>
+            <TabsTrigger value="docs" className="rounded-full px-6 gap-2"><FileText className="w-4 h-4" /> Documents</TabsTrigger>
+          </TabsList>
+
+          {["all", "video", "audio", "docs"].map((tab) => (
+            <TabsContent key={tab} value={tab} className="mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredResources
+                  .filter(r => tab === "all" || r.fileType.includes(tab === "docs" ? "application" : tab))
+                  .map((res) => (
+                    <Card key={res.id} className="group hover:shadow-lg transition-all border-none shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+                      <CardHeader className="pb-4">
+                        <div className="flex justify-between items-start">
+                          <div className="p-3 bg-muted/50 rounded-2xl">
+                            {getResourceIcon(res.fileType)}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => onDeleteResource(res.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <CardTitle className="text-lg font-headline mt-4">{res.fileName}</CardTitle>
+                        <CardDescription className="line-clamp-2 font-body text-sm">{res.summary}</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="bg-muted/30 p-4 flex justify-between">
+                        <Badge variant="outline" className="border-primary/20 text-primary">{res.aiContent?.targetAge || "3-5 Years"}</Badge>
+                        <Button size="sm" onClick={() => setSelectedResource(res)}>View Details</Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                {filteredResources.length === 0 && (
+                  <div className="col-span-full py-24 text-center space-y-4 opacity-50">
+                    <LayoutGrid className="w-16 h-16 mx-auto" />
+                    <p className="text-xl font-headline">No resources found</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {selectedResource && (
+          <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-headline">{selectedResource.fileName}</DialogTitle>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-primary">{selectedResource.aiContent?.targetAge}</Badge>
+                  <TranslationSelector 
+                    content={selectedResource.summary || ""} 
+                    onTranslate={(t) => setSelectedResource({...selectedResource, summary: t})}
+                  />
+                </div>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Star className="w-4 h-4 text-primary" /> Summary</h4>
+                    <p className="text-muted-foreground leading-relaxed font-body">{selectedResource.summary}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-2">Key Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedResource.aiContent?.skillsMapped?.map(s => (
+                        <Badge key={s} variant="secondary">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <Card className="bg-muted/50 border-none">
+                    <CardHeader><CardTitle className="text-base">Learning Objectives</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
+                        <div key={i} className="flex gap-2 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>{obj}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    );
+  }
+
+  if (activeTab === "insights") {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <h2 className="text-3xl font-headline font-bold">Classroom Insights</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <Card className="border-none shadow-sm">
+             <CardHeader>
+               <CardTitle className="font-headline">Engagement Trends</CardTitle>
+               <CardDescription>Average participation across current activities</CardDescription>
+             </CardHeader>
+             <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground italic">
+               <div className="text-center">
+                 <Star className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                 <p>AI is analyzing engagement patterns from recent videos...</p>
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="bg-primary text-white border-none shadow-lg">
+             <CardHeader>
+               <CardTitle className="font-headline">Teacher Recommendation</CardTitle>
+             </CardHeader>
+             <CardContent className="space-y-4">
+                <p className="text-lg font-body">"Based on today's Sensory Play activity, students showed high engagement with tactile materials but struggled with verbal turn-taking."</p>
+                <div className="p-4 bg-white/10 rounded-xl">
+                  <p className="font-bold text-sm uppercase tracking-wider mb-2">Pro Tip:</p>
+                  <p className="text-sm">Try introducing a 'Magic Talking Wand' during the next group session to facilitate sharing.</p>
+                </div>
+             </CardContent>
+           </Card>
+        </div>
+      </div>
+    );
+  }
+
   const unreadMessagesCount = teacherMessages.filter(m => !m.read).length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {activeTab === "dashboard" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-primary text-white border-none overflow-hidden relative shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline flex items-center gap-2">
-                <Star className="w-4 h-4" /> Today's Focus
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold font-headline">Sensory Play & Art</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-primary" /> Present
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold">{roster.filter(s => s.present).length}/{roster.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-accent/10 border-accent/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline flex items-center gap-2 text-accent">
-                <Mail className="w-4 h-4" /> Messages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold">{unreadMessagesCount} New</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-primary text-white border-none overflow-hidden relative shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-headline flex items-center gap-2">
+              <Star className="w-4 h-4" /> Today's Focus
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold font-headline">Sensory Play & Art</p>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-headline flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-primary" /> Present
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold">{roster.filter(s => s.present).length}/{roster.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-accent/10 border-accent/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-headline flex items-center gap-2 text-accent">
+              <Mail className="w-4 h-4" /> Messages
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold">{unreadMessagesCount} New</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>

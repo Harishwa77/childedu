@@ -12,7 +12,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { 
   DashboardTab, 
   ChildRegistrationInfo, 
-  UserMessage 
+  UserMessage,
+  Resource,
+  Insight
 } from "@/app/types";
 
 export default function Home() {
@@ -20,6 +22,28 @@ export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([
+    {
+      id: "i1",
+      type: "academic",
+      title: "Strong Numeracy Progress",
+      content: "Leo is showing exceptional focus during group counting activities. Consider introducing basic addition games at home.",
+      date: "Today",
+      read: false,
+      priority: "medium"
+    },
+    {
+      id: "i2",
+      type: "social",
+      title: "Collaborative Play",
+      content: "Great observation today! Leo led a small group in the block corner, demonstrating excellent leadership and sharing.",
+      date: "Yesterday",
+      read: true,
+      priority: "high"
+    }
+  ]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
@@ -108,6 +132,14 @@ export default function Home() {
     setActiveRole(null);
   };
 
+  const handleUploadResource = (res: Resource) => {
+    setResources(prev => [res, ...prev]);
+  };
+
+  const handleDeleteResource = (id: string) => {
+    setResources(prev => prev.filter(r => r.id !== id));
+  };
+
   const renderDashboard = () => {
     if (activeTab === "magic-games") {
       return <KinderLearningHub />;
@@ -124,6 +156,9 @@ export default function Home() {
             messages={messages}
             onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Parent" })}
             onMarkRead={handleMarkAsRead}
+            resources={resources}
+            onUploadResource={handleUploadResource}
+            onDeleteResource={handleDeleteResource}
           />
         );
       case "parent":
@@ -137,6 +172,8 @@ export default function Home() {
             onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Teacher" })}
             messages={messages}
             onMarkRead={handleMarkAsRead}
+            resources={resources}
+            insights={insights}
           />
         );
       case "admin":
@@ -178,6 +215,7 @@ export default function Home() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       roster={roster}
+      resources={resources}
     >
       {renderDashboard()}
       <Toaster />

@@ -3,7 +3,28 @@
  * Centrally managed to avoid circular dependencies.
  */
 
-export type DashboardTab = "dashboard" | "magic-games";
+import { ProcessEducationalContentOutput } from "@/ai/flows/process-educational-content-pipeline";
+
+export type DashboardTab = "dashboard" | "resources" | "insights" | "magic-games";
+
+export interface Resource extends Partial<ProcessEducationalContentOutput> {
+  id: string;
+  fileName: string;
+  fileType: string;
+  timestamp: string;
+  thumbnailUrl?: string;
+  aiContent?: ProcessEducationalContentOutput;
+}
+
+export interface Insight {
+  id: string;
+  type: "academic" | "social" | "recommendation";
+  title: string;
+  content: string;
+  date: string;
+  read: boolean;
+  priority: "high" | "medium" | "low";
+}
 
 export interface ChildRegistrationInfo {
   name: string;

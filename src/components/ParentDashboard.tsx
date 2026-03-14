@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Heart, Activity, School, MessageCircle, Send, Mail, Fingerprint, Save, CheckCircle2, UserCircle, Settings } from "lucide-react";
+import { Heart, Activity, School, MessageCircle, Send, Mail, Fingerprint, Save, CheckCircle2, UserCircle, Settings, LayoutGrid, FileVideo, FileAudio, FileText, Star, Sparkles, BrainCircuit, Lightbulb, Compass, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,16 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   DashboardTab, 
   ChildRegistrationInfo, 
-  UserMessage 
+  UserMessage,
+  Resource,
+  Insight
 } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Student } from "./TeacherDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
 
 interface ParentDashboardProps {
@@ -29,20 +33,44 @@ interface ParentDashboardProps {
   onSendMessage: (msg: { subject: string; text: string }) => void;
   messages: UserMessage[];
   onMarkRead: (id: string) => void;
+  resources: Resource[];
+  insights: Insight[];
 }
 
-export function ParentDashboard({ searchQuery, activeTab, roster, childInfo, onRegisterChild, onSendMessage, messages, onMarkRead }: ParentDashboardProps) {
+export function ParentDashboard({ 
+  searchQuery, 
+  activeTab, 
+  roster, 
+  childInfo, 
+  onRegisterChild, 
+  onSendMessage, 
+  messages, 
+  onMarkRead,
+  resources,
+  insights
+}: ParentDashboardProps) {
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [messageSubject, setMessageSubject] = useState("");
   const [isMessaging, setIsMessaging] = useState(false);
   const [isMsgDialogOpen, setIsMsgDialogOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   
   const { toast } = useToast();
 
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
+
+  const skillData = useMemo(() => {
+    if (!childData?.skills) return [];
+    return [
+      { subject: 'Language', value: childData.skills.language, fullMark: 100 },
+      { subject: 'Numeracy', value: childData.skills.numeracy, fullMark: 100 },
+      { subject: 'Social', value: childData.skills.social, fullMark: 100 },
+      { subject: 'Motor', value: childData.skills.motor, fullMark: 100 },
+    ];
+  }, [childData]);
 
   const parentMessages = useMemo(() => messages.filter(m => m.to === "Parent"), [messages]);
 
@@ -61,6 +89,164 @@ export function ParentDashboard({ searchQuery, activeTab, roster, childInfo, onR
       setIsMsgDialogOpen(false);
     }, 1000);
   };
+
+  const getResourceIcon = (type: string) => {
+    if (type.includes('video')) return <FileVideo className="w-5 h-5 text-blue-500" />;
+    if (type.includes('audio')) return <FileAudio className="w-5 h-5 text-emerald-500" />;
+    return <FileText className="w-5 h-5 text-orange-500" />;
+  };
+
+  if (activeTab === "resources") {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-headline font-bold">Classroom Library</h2>
+            <p className="text-muted-foreground font-body">Browse lessons shared by Ms. Clara</p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="bg-muted/50 p-1 rounded-full h-12">
+            <TabsTrigger value="all" className="rounded-full px-6 gap-2"><LayoutGrid className="w-4 h-4" /> All</TabsTrigger>
+            <TabsTrigger value="video" className="rounded-full px-6 gap-2"><FileVideo className="w-4 h-4" /> Videos</TabsTrigger>
+            <TabsTrigger value="audio" className="rounded-full px-6 gap-2"><FileAudio className="w-4 h-4" /> Audio</TabsTrigger>
+            <TabsTrigger value="docs" className="rounded-full px-6 gap-2"><FileText className="w-4 h-4" /> Documents</TabsTrigger>
+          </TabsList>
+
+          {["all", "video", "audio", "docs"].map((tab) => (
+            <TabsContent key={tab} value={tab} className="mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {resources
+                  .filter(r => tab === "all" || r.fileType.includes(tab === "docs" ? "application" : tab))
+                  .map((res) => (
+                    <Card key={res.id} onClick={() => setSelectedResource(res)} className="cursor-pointer group hover:shadow-lg transition-all border-none shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+                      <CardHeader className="pb-4">
+                        <div className="p-3 bg-muted/50 rounded-2xl w-fit">
+                          {getResourceIcon(res.fileType)}
+                        </div>
+                        <CardTitle className="text-lg font-headline mt-4">{res.fileName}</CardTitle>
+                        <CardDescription className="line-clamp-2 font-body text-sm">{res.summary}</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="bg-muted/30 p-4">
+                        <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                          <Compass className="w-3 h-3" /> Explore Topic
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  ))}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {selectedResource && (
+          <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-headline">{selectedResource.fileName}</DialogTitle>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-primary">{selectedResource.aiContent?.targetAge}</Badge>
+                  <TranslationSelector 
+                    content={selectedResource.summary || ""} 
+                    onTranslate={(t) => setSelectedResource({...selectedResource, summary: t})}
+                  />
+                </div>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4 text-primary" /> At-Home Extension</h4>
+                    <p className="text-muted-foreground leading-relaxed font-body">
+                      {selectedResource.aiContent?.activitySuggestions?.[0] || "Continue exploring this topic through play!"}
+                    </p>
+                  </div>
+                  <Card className="bg-primary/5 border-none p-4">
+                    <h4 className="font-bold text-sm mb-2">Learning Highlights</h4>
+                    <ul className="space-y-2">
+                      {selectedResource.aiContent?.keyConcepts?.map(c => (
+                        <li key={c} className="text-sm flex items-center gap-2">
+                          <Sparkles className="w-3 h-3 text-primary" /> {c}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
+                <div className="space-y-4">
+                  <h4 className="font-bold">Recommended Similar Content</h4>
+                  {resources.filter(r => r.id !== selectedResource.id).slice(0, 2).map(r => (
+                    <div key={r.id} className="p-3 bg-muted/50 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-muted" onClick={() => setSelectedResource(r)}>
+                      {getResourceIcon(r.fileType)}
+                      <span className="text-sm font-bold truncate">{r.fileName}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    );
+  }
+
+  if (activeTab === "insights") {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-headline font-bold">Smart Insights</h2>
+            <p className="text-muted-foreground font-body">Personalized progress for {childInfo.name}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Card className="border-none shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <BrainCircuit className="w-6 h-6 text-primary" /> Learning DNA Radar
+              </CardTitle>
+              <CardDescription>Current skill profile visualization</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={skillData}>
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fontWeight: 'bold', fill: '#64748b' }} />
+                  <Radar
+                    name={childInfo.name}
+                    dataKey="value"
+                    stroke="#38BDF8"
+                    fill="#38BDF8"
+                    fillOpacity={0.6}
+                  />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" /> Recent Growth Highlights
+            </h3>
+            {insights.map((insight) => (
+              <Card key={insight.id} className={cn("border-l-4", insight.priority === 'high' ? "border-l-orange-400" : "border-l-primary")}>
+                <CardHeader className="p-4">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-base font-headline">{insight.title}</CardTitle>
+                    <Badge variant="secondary" className="text-[10px]">{insight.date}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-sm text-muted-foreground font-body">{insight.content}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -242,8 +428,4 @@ export function ParentDashboard({ searchQuery, activeTab, roster, childInfo, onR
       </div>
     </div>
   );
-}
-
-function Loader2(props: any) {
-  return <Activity {...props} className={cn("animate-spin", props.className)} />;
 }

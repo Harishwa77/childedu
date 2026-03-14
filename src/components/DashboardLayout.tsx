@@ -1,11 +1,11 @@
 "use client";
 
 import { ReactNode } from "react";
-import { LogOut, Bell, Search, UserCircle, Gamepad2, ArrowRightLeft } from "lucide-react";
+import { LogOut, Bell, Search, UserCircle, Gamepad2, ArrowRightLeft, LayoutDashboard, Library, Sparkles as SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
-import { DashboardTab } from "@/app/types";
+import { DashboardTab, Resource } from "@/app/types";
 import { Student } from "./TeacherDashboard";
 import { Role } from "./RoleSelector";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ interface DashboardLayoutProps {
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
   roster: Student[];
+  resources: Resource[];
 }
 
 export function DashboardLayout({ 
@@ -31,7 +32,8 @@ export function DashboardLayout({
   onSearchChange,
   activeTab,
   onTabChange,
-  roster
+  roster,
+  resources
 }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -43,22 +45,45 @@ export function DashboardLayout({
             <span className="font-headline text-xl font-bold text-primary tracking-tight">EduSense AI</span>
           </div>
           
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
             <Button 
               variant="ghost" 
               onClick={() => onTabChange("dashboard")}
               className={cn(
-                "text-sm font-medium transition-colors",
+                "text-sm font-medium transition-colors h-9 px-3 gap-2",
                 activeTab === "dashboard" ? "text-primary bg-primary/5" : "text-muted-foreground"
               )}
             >
-              Dashboard
+              <LayoutDashboard className="w-4 h-4" />
+              Overview
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("resources")}
+              className={cn(
+                "text-sm font-medium transition-colors h-9 px-3 gap-2",
+                activeTab === "resources" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              <Library className="w-4 h-4" />
+              Resources
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("insights")}
+              className={cn(
+                "text-sm font-medium transition-colors h-9 px-3 gap-2",
+                activeTab === "insights" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              <SparklesIcon className="w-4 h-4" />
+              Insights
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => onTabChange("magic-games")}
               className={cn(
-                "text-sm font-medium transition-colors gap-2",
+                "text-sm font-medium transition-colors h-9 px-3 gap-2",
                 activeTab === "magic-games" ? "text-primary bg-primary/5" : "text-muted-foreground"
               )}
             >
@@ -128,8 +153,8 @@ export function DashboardLayout({
         {children}
       </main>
 
-      {/* AI Assistant - updated to pass empty resources since they are removed */}
-      <AIAssistant resources={[]} roster={roster} />
+      {/* AI Assistant */}
+      <AIAssistant resources={resources} roster={roster} />
     </div>
   );
 }
