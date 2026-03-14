@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User, Edit2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { DashboardTab, Resource } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
@@ -62,6 +64,14 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
   const [manualEntryStudent, setManualEntryStudent] = useState<Student | null>(null);
   const [manualActivityText, setManualActivityText] = useState("");
 
+  const [milestoneEntryStudent, setMilestoneEntryStudent] = useState<Student | null>(null);
+  const [tempSkills, setTempSkills] = useState({
+    language: 50,
+    numeracy: 50,
+    social: 50,
+    motor: 50
+  });
+
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
     const query = searchQuery.toLowerCase();
@@ -103,6 +113,43 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     toast({
       title: "Activity Logged",
       description: `Manual activity entry saved for ${manualEntryStudent.name}.`
+    });
+  };
+
+  const handleOpenMilestones = (student: Student) => {
+    setMilestoneEntryStudent(student);
+    setTempSkills(student.skills || { language: 50, numeracy: 50, social: 50, motor: 50 });
+  };
+
+  const handleSaveMilestones = () => {
+    if (!milestoneEntryStudent) return;
+
+    const avgScore = Math.round((tempSkills.language + tempSkills.numeracy + tempSkills.social + tempSkills.motor) / 4);
+    const date = new Date().toLocaleDateString('en-US', { month: 'short' });
+
+    setRoster(prev => prev.map(s => {
+      if (s.id === milestoneEntryStudent.id) {
+        const newHistory = [...(s.history || [])];
+        const existingIndex = newHistory.findIndex(h => h.date === date);
+        if (existingIndex > -1) {
+          newHistory[existingIndex] = { date, score: avgScore };
+        } else {
+          newHistory.push({ date, score: avgScore });
+        }
+
+        return {
+          ...s,
+          skills: { ...tempSkills },
+          history: newHistory
+        };
+      }
+      return s;
+    }));
+
+    setMilestoneEntryStudent(null);
+    toast({
+      title: "Milestones Updated",
+      description: `Developmental scores for ${milestoneEntryStudent.name} have been updated.`
     });
   };
 
@@ -339,6 +386,14 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                           >
                             <PlusCircle className="w-3 h-3" /> Entry
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleOpenMilestones(student)}
+                            className="h-7 text-[10px] gap-1 px-2 border-accent text-accent hover:bg-accent/5"
+                          >
+                            <Activity className="w-3 h-3" /> Skills
+                          </Button>
                         </div>
                       </TableCell>
                       <TableCell>{getEngagementBadge(student.engagement)}</TableCell>
@@ -402,6 +457,44 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
         </DialogContent>
       </Dialog>
 
+      {/* Manual Milestone Entry Dialog */}
+      <Dialog open={!!milestoneEntryStudent} onOpenChange={(open) => !open && setMilestoneEntryStudent(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl">Update Learning Milestones</DialogTitle>
+            <DialogDescription>
+              Adjust developmental scores for <strong>{milestoneEntryStudent?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            {[
+              { id: 'language', label: 'Language Skills', color: 'text-blue-500' },
+              { id: 'numeracy', label: 'Numeracy Skills', color: 'text-emerald-500' },
+              { id: 'social', label: 'Social Interaction', color: 'text-purple-500' },
+              { id: 'motor', label: 'Motor Skills', color: 'text-orange-500' }
+            ].map((skill) => (
+              <div key={skill.id} className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label className={`font-bold ${skill.color}`}>{skill.label}</Label>
+                  <span className="text-sm font-bold bg-muted px-2 py-1 rounded">{tempSkills[skill.id as keyof typeof tempSkills]}%</span>
+                </div>
+                <Slider 
+                  value={[tempSkills[skill.id as keyof typeof tempSkills]]}
+                  max={100}
+                  step={1}
+                  onValueChange={(val) => setTempSkills(prev => ({ ...prev, [skill.id]: val[0] }))}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveMilestones} className="gap-2 w-full">
+              <Save className="w-4 h-4" /> Save Skill Updates
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Student Profile Dialog */}
       <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
         <DialogContent className="sm:max-w-2xl">
@@ -423,9 +516,14 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Skill Breakdown */}
               <div className="space-y-4">
-                <h4 className="font-headline font-bold text-lg flex items-center gap-2">
-                  <Star className="w-5 h-5 text-accent" /> Developmental Skills
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                    <Star className="w-5 h-5 text-accent" /> Developmental Skills
+                  </h4>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(null); handleOpenMilestones(selectedStudent!); }} className="h-8 text-xs gap-1">
+                    <Edit2 className="w-3 h-3" /> Edit
+                  </Button>
+                </div>
                 <div className="space-y-4">
                   {[
                     { label: "Language", value: selectedStudent?.skills?.language || 0, color: "bg-blue-500" },
