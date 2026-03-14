@@ -39,7 +39,7 @@ const SummarizeMultimodalContentOutputSchema = z.object({
     .string()
     .optional()
     .describe(
-      'The transcription of the audio content, if the input was an audio or video file.'
+      'The transcription of the audio/video content, if applicable.'
     ),
 });
 export type SummarizeMultimodalContentOutput = z.infer<
@@ -58,31 +58,18 @@ const summarizePrompt = ai.definePrompt({
   name: 'summarizeMultimodalContentPrompt',
   input: {schema: SummarizeMultimodalContentInputSchema},
   output: {schema: SummarizeMultimodalContentOutputSchema},
-  model: 'googleai/gemini-1.5-flash', // Use the string ID directly to avoid "ai.model is not a function" error
-  prompt: `You are an expert AI assistant that processes educational content.
-Given the following content, perform the specified tasks based on its type.
+  prompt: `You are an expert AI assistant specialized in educational content analysis for early childhood development.
+You have been provided with a file of type: {{{contentType}}}.
 
-Content Type: {{{contentType}}}
+Please analyze the following content:
+{{media url=contentDataUri}}
 
-{{#if (eq contentType "audio/wav")}}
-  Transcribe the audio content provided. Then, identify any key teaching or learning activities mentioned or implied. Finally, provide a concise summary of the entire content.
-  Audio Content: {{media url=contentDataUri}}
-{{else if (eq contentType "video/mp4")}}
-  Transcribe the video content provided. Then, identify any key teaching or learning activities demonstrated. Finally, provide a concise summary of the entire content.
-  Video Content: {{media url=contentDataUri}}
-{{else if (or (eq contentType "application/pdf") (eq contentType "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))}}
-  Analyze the document content provided. Extract key information, identify learning objectives, categorize the educational content, and provide a concise summary.
-  Document Content: {{media url=contentDataUri}}
-{{else if (or (eq contentType "image/jpeg") (eq contentType "image/png"))}}
-  Analyze the image content provided. Identify and categorize any learning activities depicted. Finally, provide a concise summary of the image's content.
-  Image Content: {{media url=contentDataUri}}
-{{else}}
-  Process the provided content. Identify any key activities and provide a concise summary. If it's audio or video, attempt to transcribe it.
-  Content: {{media url=contentDataUri}}
-{{/if}}
+Tasks:
+1. Provide a concise summary of what is happening in the content, focusing on educational value.
+2. Identify and list 3-5 key teaching or learning activities demonstrated (e.g., social interaction, tactile play, numeracy, literacy, creative expression).
+3. If the content is an audio or video file, provide a clean transcript of any spoken words.
 
-Ensure your response is a valid JSON object matching the following schema. Make sure to include an empty array for 'keyActivities' if none are found, and omit 'transcript' if not applicable.
-`,
+Ensure your response follows the requested JSON structure precisely.`,
 });
 
 // Genkit Flow Definition
