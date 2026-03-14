@@ -73,11 +73,12 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         });
         setInsights(res);
       } catch (error: any) {
-        console.error(error);
+        // We handle the error silently here because the flow now returns a fallback response for 429s.
+        // For actual fatal errors, we show a toast.
         toast({
           variant: "destructive",
-          title: "AI Insights Unavailable",
-          description: error.message || "We encountered an issue generating your child's learning insights. Please try again later.",
+          title: "AI Analysis Limited",
+          description: "We're experiencing high demand. Some insights may be generic until traffic subsides.",
         });
       } finally {
         setIsLoading(false);
@@ -108,7 +109,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       setBedtimeStory(story);
       toast({ title: "Bedtime Story Ready! 🌙", description: `A unique story for ${childInfo.name} has been created.` });
     } catch (error) {
-      toast({ variant: "destructive", title: "Story Failed", description: "Could not create your story right now." });
+      toast({ variant: "destructive", title: "Story Failed", description: "The storytelling engine is currently at capacity. Please try again soon." });
     } finally {
       setIsGeneratingStory(false);
     }

@@ -44,7 +44,28 @@ export type ParentalLearningInsightsOutput = z.infer<typeof ParentalLearningInsi
 export async function generateParentalLearningInsights(
   input: ParentalLearningInsightsInput
 ): Promise<ParentalLearningInsightsOutput> {
-  return parentalLearningInsightsFlow(input);
+  try {
+    const result = await parentalLearningInsightsFlow(input);
+    if (!result) throw new Error("AI failed to generate results.");
+    return result;
+  } catch (error: any) {
+    // If quota is hit, return a friendly fallback instead of crashing the app
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      return {
+        learningSummary: "Our AI analysis engine is currently processing a high volume of student data. Your personalized summary will refresh shortly. In the meantime, continue engaging with the activities below.",
+        homeActivitySuggestions: [
+          "Read a storybook together for 15 minutes before bedtime.",
+          "Practice counting everyday objects like spoons or toys during play.",
+          "Encourage your child to describe their favorite part of the school day.",
+          "Engage in a simple drawing or coloring session together."
+        ],
+        targetedIntervention: "AI insights are temporarily unavailable due to high demand. Please check back later for a specialized developmental recommendation."
+      };
+    }
+    // For other errors, log and rethrow
+    console.error("AI Insights Error:", error);
+    throw error;
+  }
 }
 
 const parentalLearningInsightsPrompt = ai.definePrompt({
@@ -88,17 +109,7 @@ const parentalLearningInsightsFlow = ai.defineFlow(
     outputSchema: ParentalLearningInsightsOutputSchema,
   },
   async (input) => {
-    try {
-      const {output} = await parentalLearningInsightsPrompt(input);
-      if (!output) {
-        throw new Error('AI failed to generate insights output.');
-      }
-      return output;
-    } catch (error: any) {
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
-        throw new Error('AI service is currently busy (quota exceeded). Please try again in a moment.');
-      }
-      throw error;
-    }
+    const {output} = await parentalLearningInsightsPrompt(input);
+    return output!;
   }
 );
