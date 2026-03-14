@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -17,6 +16,18 @@ export interface ResourceAnalysis {
   recommendedImprovement: string;
 }
 
+export interface AILessonContent {
+  summary: string;
+  keyConcepts: string[];
+  flashcards: { question: string; answer: string }[];
+  quiz: { question: string; options: string[]; correctAnswer: string }[];
+  activitySuggestions: string[];
+  translations: {
+    Tamil: { summary: string; concepts: string[] };
+    Hindi: { summary: string; concepts: string[] };
+  };
+}
+
 export interface Resource {
   id: string;
   fileName: string;
@@ -26,7 +37,8 @@ export interface Resource {
   fileType: string;
   timestamp: string;
   analysis?: ResourceAnalysis;
-  targetStudentId?: string; // Optional link to a specific student
+  targetStudentId?: string;
+  aiContent?: AILessonContent; // Link to the autonomous AI generated kit
 }
 
 export interface ChildRegistrationInfo {
@@ -40,14 +52,14 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Persist Parent Registration Info across role switches
+  // Persist Parent Registration Info
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
     className: "Preschool Class B",
     mentorName: "Ms. Clara"
   });
 
-  // Shared resources state between Teacher and Parent
+  // Shared resources state
   const [resources, setResources] = useState<Resource[]>([
     {
       id: "1",
@@ -63,6 +75,22 @@ export default function Home() {
         participationPatterns: "Students working in pairs, shared decision making on structural stability.",
         teachingEffectiveness: "Teacher successfully used open-ended questions to guide the activity.",
         recommendedImprovement: "Introduce varied block shapes to increase complexity of spatial reasoning."
+      },
+      aiContent: {
+        summary: "An interactive building session focusing on teamwork and structural concepts.",
+        keyConcepts: ["Teamwork", "Balance", "Shape Identification"],
+        flashcards: [
+          { question: "What builds stability in a tower?", answer: "A wide, strong base." },
+          { question: "How do we work together?", answer: "By sharing blocks and communicating." }
+        ],
+        quiz: [
+          { question: "Which shape is best for the base?", options: ["Square", "Triangle", "Circle", "Line"], correctAnswer: "Square" }
+        ],
+        activitySuggestions: ["Building with cardboard boxes", "Blindfolded building challenge"],
+        translations: {
+          Tamil: { summary: "குழு வேலை மற்றும் கட்டுமானக் கருத்துக்களில் கவனம் செலுத்தும் ஒரு ஊடாடும் அமர்வு.", concepts: ["குழுப்பணி", "சமநிலை", "வடிவ அடையாளம்"] },
+          Hindi: { summary: "टीम वर्क और संरचनात्मक अवधारणाओं पर ध्यान केंद्रित करने वाला एक इंटरैक्टिव सत्र।", concepts: ["टीम वर्क", "संतुलन", "आकार पहचान"] }
+        }
       }
     },
     {
@@ -76,7 +104,7 @@ export default function Home() {
     }
   ]);
 
-  // Shared Roster State with Developmental Data
+  // Shared Roster State
   const [roster, setRoster] = useState<Student[]>([
     { 
       id: "s1", 

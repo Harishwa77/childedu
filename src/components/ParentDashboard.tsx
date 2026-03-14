@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2, TrendingUp, AlertCircle, Lightbulb } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2, TrendingUp, AlertCircle, Lightbulb, Zap, HelpCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { Student } from "./TeacherDashboard";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -39,7 +39,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<number[]>([]);
   
-  // Find child in roster for developmental data
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
@@ -104,29 +103,16 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       audio.play();
     } catch (error) {
       console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Audio Error",
-        description: "Could not generate audio summary."
-      });
       setIsSpeaking(false);
     }
   };
 
   const [tempChildInfo, setTempChildInfo] = useState<ChildRegistrationInfo>(childInfo);
 
-  // Sync temp state if the prop changes (though lifting state usually prevents this need)
-  useEffect(() => {
-    setTempChildInfo(childInfo);
-  }, [childInfo]);
-
   const handleSaveRegistration = () => {
     onRegisterChild(tempChildInfo);
     setIsRegDialogOpen(false);
-    toast({
-      title: "Profile Updated",
-      description: "Student registration details have been saved."
-    });
+    toast({ title: "Profile Updated", description: "Student registration details have been saved." });
   };
 
   const getIcon = (type: string) => {
@@ -152,7 +138,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20">
                 <UserCircle className="w-6 h-6 text-primary" />
               </div>
-              <div className="font-body text-sm relative">
+              <div className="font-body text-sm">
                 <p className="font-bold text-primary">{childInfo.name}</p>
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
                   <School className="w-3 h-3" /> {childInfo.className}
@@ -163,9 +149,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Child Registration</DialogTitle>
-              <DialogDescription>
-                Update your child's information for personalized AI recommendations.
-              </DialogDescription>
+              <DialogDescription>Update your child's information for personalized AI recommendations.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -219,7 +203,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                   <Skeleton className="h-4 w-[90%]" />
                 </div>
               ) : (
-                <p className="text-lg font-body leading-relaxed text-muted-foreground">
+                <p className="text-lg font-body leading-relaxed text-muted-foreground italic">
                   "{insights?.learningSummary}"
                 </p>
               )}
@@ -238,18 +222,17 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
-                    <p className="text-xs text-muted-foreground font-body">Activity Alignment</p>
+                    <p className="text-xs text-muted-foreground font-body">Home Alignment</p>
                   </div>
                 </div>
                 <Progress value={connectionScore} className="h-2" />
               </CardContent>
             </Card>
 
-            {/* AI Personalized Learning Recommendations Alert */}
             {insights?.targetedIntervention && (
               <Alert className="bg-blue-50 border-blue-200 border-2">
                 <Lightbulb className="h-5 w-5 text-blue-600" />
-                <AlertTitle className="text-blue-800 font-headline text-lg font-bold">Personalized Learning Recommendation</AlertTitle>
+                <AlertTitle className="text-blue-800 font-headline font-bold">Personalized Recommendation</AlertTitle>
                 <AlertDescription className="text-blue-700 font-body mt-2">
                   {insights.targetedIntervention}
                 </AlertDescription>
@@ -259,153 +242,104 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         </div>
       )}
 
-      {/* Shared Classroom Resources Search Results */}
-      {searchQuery.trim() !== "" && (
-        <div className="space-y-4 animate-in slide-in-from-top-2">
+      {(activeTab === "dashboard" || activeTab === "resources") && (
+        <div className="space-y-4">
           <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-            <Search className="w-5 h-5 text-primary" />
-            Classroom Search Results
+            <Book className="w-5 h-5 text-primary" />
+            Classroom Activity Pack
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredTeacherResources.length > 0 ? (
-              filteredTeacherResources.map((res) => (
-                <Card 
-                  key={res.id} 
-                  className="hover:border-primary cursor-pointer transition-all"
-                  onClick={() => setSelectedResource(res)}
-                >
-                  <CardContent className="p-4 flex gap-4 items-center">
-                    <div className="p-2 bg-muted rounded-lg">{getIcon(res.fileType)}</div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="font-bold truncate text-sm">{res.fileName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{res.summary}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground italic">No shared resources found matching your search.</p>
-            )}
+            {resources.filter(r => !searchQuery || r.fileName.toLowerCase().includes(searchQuery.toLowerCase())).map((res) => (
+              <Card 
+                key={res.id} 
+                className="hover:border-primary cursor-pointer transition-all group"
+                onClick={() => setSelectedResource(res)}
+              >
+                <CardContent className="p-4 flex gap-4 items-center">
+                  <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="font-bold truncate text-sm">{res.fileName}</p>
+                    <p className="text-xs text-muted-foreground truncate italic">"{res.summary}"</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Insights Tab */}
-      {(activeTab === "dashboard" || activeTab === "insights") && (
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
-              <BrainCircuit className="w-6 h-6 text-primary" />
-              Developmental Insights
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <Card className="bg-accent/5 border-accent/20">
-                <CardHeader>
-                  <CardTitle className="text-lg font-headline flex items-center gap-2">
-                    <Target className="w-5 h-5" /> Learning Milestones
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-6">
-                    {[
-                      { area: "Language Skills", progress: childData?.skills?.language || 0, color: "bg-blue-500" },
-                      { area: "Numeracy Skills", progress: childData?.skills?.numeracy || 0, color: "bg-emerald-500" },
-                      { area: "Social Interaction", progress: childData?.skills?.social || 0, color: "bg-purple-500" },
-                      { area: "Motor Skills", progress: childData?.skills?.motor || 0, color: "bg-orange-500" },
-                    ].map(item => (
-                      <div key={item.area} className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
-                          <span className="font-body text-muted-foreground">{item.area}</span>
-                          <span className="text-primary">{item.progress}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-accent/10 rounded-full overflow-hidden">
-                          <div className={`h-full ${item.color}`} style={{ width: `${item.progress}%` }}></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-             </Card>
-
-             <Card className="bg-primary/5 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-lg font-headline flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" /> Learning Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-56 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={childData?.history || []}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                        <YAxis hide domain={[0, 100]} />
-                        <RechartsTooltip />
-                        <Line 
-                          type="monotone" 
-                          dataKey="score" 
-                          stroke="hsl(var(--primary))" 
-                          strokeWidth={3} 
-                          dot={{ r: 4, fill: "hsl(var(--primary))" }} 
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-             </Card>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="text-xl font-headline font-bold flex items-center gap-2">
-              <Home className="w-6 h-6 text-accent" />
-              Tailored Home Activities
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isLoading ? (
-                [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
-              ) : (
-                insights?.homeActivitySuggestions.map((act, idx) => (
-                  <Card 
-                    key={idx} 
-                    className={cn(
-                      "group hover:border-accent transition-all cursor-pointer relative overflow-hidden",
-                      completedActivities.includes(idx) ? "bg-accent/10 border-accent" : ""
-                    )}
-                    onClick={() => toggleActivity(idx)}
-                  >
-                    <CardContent className="p-6 space-y-4">
-                      <p className={cn(
-                        "font-body text-base leading-snug",
-                        completedActivities.includes(idx) ? "text-accent font-bold" : "text-foreground"
-                      )}>
-                        {act}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Shared Resource Modal */}
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
-        <SheetContent className="sm:max-w-xl overflow-y-auto">
+        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto bg-white rounded-t-[2rem]">
           {selectedResource && (
-            <div className="space-y-6 py-6">
+            <div className="max-w-4xl mx-auto space-y-8 py-8">
               <SheetHeader>
-                <SheetTitle>{selectedResource.fileName}</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-4">
-                <h4 className="font-headline font-bold text-lg">Activity Summary</h4>
-                <div className="p-4 bg-muted/50 rounded-xl font-body italic">
-                  "{selectedResource.summary}"
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 rounded-2xl">
+                    {getIcon(selectedResource.fileType)}
+                  </div>
+                  <SheetTitle className="text-3xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
                 </div>
-              </div>
+              </SheetHeader>
+
+              <Tabs defaultValue="home-kit" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-muted/30 max-w-md mx-auto">
+                  <TabsTrigger value="home-kit" className="gap-2"><Home className="w-4 h-4" /> Home Learning Pack</TabsTrigger>
+                  <TabsTrigger value="study-kit" className="gap-2"><Book className="w-4 h-4" /> Child Review Kit</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="home-kit" className="pt-8 space-y-8">
+                  <div className="space-y-4">
+                     <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                       <Zap className="w-5 h-5 text-accent" /> Multilingual Classroom Summary
+                     </h4>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-primary/5 border-none p-6">
+                           <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">English</p>
+                           <p className="text-sm font-body leading-relaxed">{selectedResource.aiContent?.summary || selectedResource.summary}</p>
+                        </Card>
+                        <Card className="bg-primary/5 border-none p-6">
+                           <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">Tamil (தமிழ்)</p>
+                           <p className="text-sm font-body leading-relaxed">{selectedResource.aiContent?.translations.Tamil.summary || "கிடைக்கவில்லை"}</p>
+                        </Card>
+                        <Card className="bg-primary/5 border-none p-6">
+                           <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">Hindi (हिन्दी)</p>
+                           <p className="text-sm font-body leading-relaxed">{selectedResource.aiContent?.translations.Hindi.summary || "उपलब्ध नहीं है"}</p>
+                        </Card>
+                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-headline font-bold">Suggested Activities for You</h4>
+                    <div className="grid gap-4">
+                      {(selectedResource.aiContent?.activitySuggestions || selectedResource.keyActivities).map((act, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 bg-muted/30 rounded-2xl">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                          <p className="font-body text-base">{act}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="study-kit" className="pt-8 space-y-8">
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                      <HelpCircle className="w-6 h-6 text-blue-500" /> interactive Flashcards for {childInfo.name}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       {selectedResource.aiContent?.flashcards.map((card, i) => (
+                         <Card key={i} className="border-2 border-primary/20 hover:border-primary transition-all p-8 text-center cursor-pointer group relative h-48 flex items-center justify-center">
+                            <p className="font-headline font-bold text-lg group-hover:opacity-0 transition-opacity">{card.question}</p>
+                            <div className="absolute inset-0 bg-primary text-white p-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                               <p className="font-body text-lg italic">"{card.answer}"</p>
+                            </div>
+                         </Card>
+                       ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </SheetContent>

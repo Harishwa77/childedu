@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User, Edit2 } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User, Edit2, Zap, HelpCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export interface Student {
   id: string;
@@ -276,55 +276,38 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 <FileText className="w-5 h-5 text-primary" />
                 {searchQuery ? `Search Results for "${searchQuery}"` : "Processed Resources"}
               </h3>
-              <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
             </div>
             <ScrollArea className="h-[600px] rounded-xl border bg-white p-4">
               <div className="space-y-4">
-                {filteredResources.length > 0 ? (
-                  filteredResources.map((res) => (
-                    <Card 
-                      key={res.id} 
-                      className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
-                      onClick={() => {
-                        setSelectedResource(res);
-                        setLessonPlan(null);
-                        setMagicMomentUrl(null);
-                      }}
-                    >
-                      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                          <div className="flex flex-col">
-                             <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
-                             {res.analysis && <span className="text-[10px] text-primary font-bold">AI Analysis Available</span>}
-                          </div>
+                {filteredResources.map((res) => (
+                  <Card 
+                    key={res.id} 
+                    className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
+                    onClick={() => {
+                      setSelectedResource(res);
+                      setLessonPlan(null);
+                      setMagicMomentUrl(null);
+                    }}
+                  >
+                    <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+                        <div className="flex flex-col">
+                           <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                           {res.aiContent && (
+                             <Badge variant="secondary" className="h-4 text-[9px] bg-primary/10 text-primary border-none">
+                               <Zap className="w-2 h-2 mr-1" /> NoteGPT Active
+                             </Badge>
+                           )}
                         </div>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-3 space-y-3">
-                        <p className="text-sm text-muted-foreground font-body italic leading-relaxed line-clamp-2">
-                          "{res.summary}"
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {res.keyActivities?.slice(0, 2).map((act: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-[10px] uppercase font-bold text-accent border-accent/20">
-                              {act}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-2">
-                    <div className="p-4 bg-muted rounded-full">
-                      <FileText className="w-8 h-8 text-muted-foreground opacity-20" />
-                    </div>
-                    <p className="font-headline font-bold text-lg text-muted-foreground">No matching resources</p>
-                  </div>
-                )}
+                      </div>
+                      <ChevronRight className="w-4 h-4" />
+                    </CardHeader>
+                    <CardContent className="p-4 pt-3">
+                      <p className="text-sm text-muted-foreground font-body italic line-clamp-2">"{res.summary}"</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </ScrollArea>
           </div>
@@ -337,7 +320,6 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 <Users className="w-6 h-6 text-primary" />
                 <h3 className="text-xl font-headline font-bold">Classroom Roster</h3>
               </div>
-              <Badge variant="outline" className="font-body">Synced with Parent Portal</Badge>
             </div>
             
             <Card className="border-none shadow-sm overflow-hidden">
@@ -355,16 +337,15 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                       <TableCell className="font-medium font-body">
                         <div className="flex items-center gap-3">
                           <div 
-                            className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                            className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary cursor-pointer"
                             onClick={() => setSelectedStudent(student)}
                           >
                             <User className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="cursor-pointer hover:text-primary transition-colors" onClick={() => setSelectedStudent(student)}>
+                            <p className="cursor-pointer hover:text-primary transition-colors font-bold" onClick={() => setSelectedStudent(student)}>
                               {student.name}
                             </p>
-                            {student.className && <p className="text-[10px] text-muted-foreground">{student.className}</p>}
                           </div>
                         </div>
                       </TableCell>
@@ -374,25 +355,12 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                             variant="ghost" 
                             size="sm" 
                             onClick={() => toggleAttendance(student.id)}
-                            className={student.present ? "text-emerald-600 p-1" : "text-red-500 p-1"}
+                            className={student.present ? "text-emerald-600" : "text-red-500"}
                           >
                             {student.present ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setManualEntryStudent(student)}
-                            className="h-7 text-[10px] gap-1 px-2"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => setManualEntryStudent(student)} className="h-7 text-[10px] gap-1 px-2">
                             <PlusCircle className="w-3 h-3" /> Entry
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleOpenMilestones(student)}
-                            className="h-7 text-[10px] gap-1 px-2 border-accent text-accent hover:bg-accent/5"
-                          >
-                            <Activity className="w-3 h-3" /> Skills
                           </Button>
                         </div>
                       </TableCell>
@@ -402,365 +370,156 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 </TableBody>
               </Table>
             </Card>
-
-            <Card className="bg-primary/5 border-primary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" /> Weekly Skill Trends
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-white rounded-xl border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Growth Area</p>
-                    <p className="text-lg font-bold">Social Cooperation</p>
-                    <p className="text-sm text-emerald-600 font-bold">+24% improvement</p>
-                  </div>
-                  <div className="p-4 bg-white rounded-xl border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Focus Needed</p>
-                    <p className="text-lg font-bold">Early Literacy</p>
-                    <p className="text-sm text-orange-600 font-bold">-5% engagement</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
 
-      {/* Manual Activity Entry Dialog */}
-      <Dialog open={!!manualEntryStudent} onOpenChange={(open) => !open && setManualEntryStudent(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-2xl">Manual Activity Entry</DialogTitle>
-            <DialogDescription>
-              Log an observation or activity directly for <strong>{manualEntryStudent?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="activity">Observation / Activity Note</Label>
-              <Textarea 
-                id="activity" 
-                placeholder="Describe what the student did today..."
-                value={manualActivityText}
-                onChange={(e) => setManualActivityText(e.target.value)}
-                className="min-h-[120px]"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveManualActivity} className="gap-2" disabled={!manualActivityText.trim()}>
-              <Save className="w-4 h-4" /> Log Activity
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Manual Milestone Entry Dialog */}
-      <Dialog open={!!milestoneEntryStudent} onOpenChange={(open) => !open && setMilestoneEntryStudent(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-2xl">Update Learning Milestones</DialogTitle>
-            <DialogDescription>
-              Adjust developmental scores for <strong>{milestoneEntryStudent?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
-            {[
-              { id: 'language', label: 'Language Skills', color: 'text-blue-500' },
-              { id: 'numeracy', label: 'Numeracy Skills', color: 'text-emerald-500' },
-              { id: 'social', label: 'Social Interaction', color: 'text-purple-500' },
-              { id: 'motor', label: 'Motor Skills', color: 'text-orange-500' }
-            ].map((skill) => (
-              <div key={skill.id} className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label className={`font-bold ${skill.color}`}>{skill.label}</Label>
-                  <span className="text-sm font-bold bg-muted px-2 py-1 rounded">{tempSkills[skill.id as keyof typeof tempSkills]}%</span>
-                </div>
-                <Slider 
-                  value={[tempSkills[skill.id as keyof typeof tempSkills]]}
-                  max={100}
-                  step={1}
-                  onValueChange={(val) => setTempSkills(prev => ({ ...prev, [skill.id]: val[0] }))}
-                />
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveMilestones} className="gap-2 w-full">
-              <Save className="w-4 h-4" /> Save Skill Updates
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Student Profile Dialog */}
-      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <div className="flex items-center gap-4">
-               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
-                 {selectedStudent?.name[0]}
-               </div>
-               <div>
-                 <DialogTitle className="font-headline text-3xl">{selectedStudent?.name}</DialogTitle>
-                 <DialogDescription className="font-body text-base">
-                   {selectedStudent?.className || "General Preschool"} • {selectedStudent?.mentorName || "Ms. Clara"}
-                 </DialogDescription>
-               </div>
-            </div>
-          </DialogHeader>
-          
-          <div className="py-6 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Skill Breakdown */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-headline font-bold text-lg flex items-center gap-2">
-                    <Star className="w-5 h-5 text-accent" /> Developmental Skills
-                  </h4>
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(null); handleOpenMilestones(selectedStudent!); }} className="h-8 text-xs gap-1">
-                    <Edit2 className="w-3 h-3" /> Edit
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    { label: "Language", value: selectedStudent?.skills?.language || 0, color: "bg-blue-500" },
-                    { label: "Numeracy", value: selectedStudent?.skills?.numeracy || 0, color: "bg-emerald-500" },
-                    { label: "Social", value: selectedStudent?.skills?.social || 0, color: "bg-purple-500" },
-                    { label: "Motor", value: selectedStudent?.skills?.motor || 0, color: "bg-orange-500" },
-                  ].map((skill) => (
-                    <div key={skill.label} className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        <span>{skill.label}</span>
-                        <span>{skill.value}%</span>
-                      </div>
-                      <Progress value={skill.value} className="h-1.5" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Learning Progress Chart */}
-              <div className="space-y-4">
-                <h4 className="font-headline font-bold text-lg flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" /> Learning Progress
-                </h4>
-                <div className="h-48 w-full bg-muted/20 rounded-xl p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={selectedStudent?.history || []}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                      <XAxis dataKey="date" hide />
-                      <YAxis hide domain={[0, 100]} />
-                      <RechartsTooltip />
-                      <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-[10px] text-center text-muted-foreground font-body">Aggregated development score over 5 months</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
-              <h4 className="font-bold text-sm mb-2 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" /> AI Mentor Note
-              </h4>
-              <p className="text-sm font-body text-muted-foreground italic">
-                "{selectedStudent?.name} is showing exceptional growth in {selectedStudent?.skills && selectedStudent.skills.social > 80 ? 'social dynamics' : 'tactile exploration'}. Recommend introducing more complex group-based problem solving tasks next month."
-              </p>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedStudent(null)}>Close Profile</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Sheet open={!!selectedResource} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedResource(null);
-          setLessonPlan(null);
-          setMagicMomentUrl(null);
-        }
-      }}>
-        <SheetContent side="right" className="sm:max-w-xl overflow-y-auto bg-white border-l shadow-2xl">
+      <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
+        <SheetContent side="right" className="sm:max-w-2xl overflow-y-auto bg-white border-l shadow-2xl p-0">
           {selectedResource && (
-            <div className="space-y-8 py-6">
-              <SheetHeader className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-primary/10 rounded-2xl">
+            <div className="flex flex-col h-full">
+              <div className="p-6 border-b bg-primary/5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-white rounded-2xl shadow-sm">
                     {getIcon(selectedResource.fileType)}
                   </div>
                   <div>
-                    <SheetTitle className="text-2xl font-headline font-bold text-primary">Resource Insights</SheetTitle>
-                    <SheetDescription className="font-body text-base">
-                      {selectedResource.fileName}
-                    </SheetDescription>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between border-y py-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(selectedResource.timestamp).toLocaleString()}
-                  </div>
-                  <TranslationSelector 
-                    content={selectedResource.summary} 
-                    onTranslate={(val) => {
-                      setResources(prev => prev.map(p => p.id === selectedResource.id ? { ...p, summary: val } : p));
-                      setSelectedResource({ ...selectedResource, summary: val });
-                    }} 
-                  />
-                </div>
-              </SheetHeader>
-
-              {/* AI Video Analysis Section */}
-              {selectedResource.analysis && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
-                   <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-primary">
-                    <Activity className="w-5 h-5" />
-                    Classroom Video Analysis
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card className="bg-primary/5 border-none">
-                      <CardContent className="p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Activity</p>
-                        <p className="text-sm font-bold">{selectedResource.analysis.activityName}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-primary/5 border-none">
-                      <CardContent className="p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
-                        <Badge variant="outline" className="mt-1">{selectedResource.analysis.studentEngagement}</Badge>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="p-4 bg-muted/30 rounded-xl space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground">Participation Patterns</p>
-                      <p className="text-sm font-body">{selectedResource.analysis.participationPatterns}</p>
-                    </div>
-                    <div className="p-4 bg-muted/30 rounded-xl space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground">Teaching Effectiveness</p>
-                      <p className="text-sm font-body">{selectedResource.analysis.teachingEffectiveness}</p>
-                    </div>
-                    <Alert className="bg-emerald-50 border-emerald-200">
-                      <AlertCircle className="h-4 w-4 text-emerald-600" />
-                      <AlertTitle className="text-emerald-800 font-bold">Recommended Improvement</AlertTitle>
-                      <AlertDescription className="text-emerald-700">
-                        {selectedResource.analysis.recommendedImprovement}
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  AI Summary
-                </h4>
-                <div className="p-6 bg-accent/5 rounded-2xl border border-accent/10 relative">
-                  <p className="text-lg font-body leading-relaxed text-foreground italic">
-                    "{selectedResource.summary}"
-                  </p>
-                </div>
-              </div>
-
-              {magicMomentUrl && (
-                <div className="space-y-3 animate-in fade-in zoom-in duration-500">
-                  <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-primary">
-                    <Video className="w-5 h-5" />
-                    Generated Magic Moment
-                  </h4>
-                  <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-xl bg-black aspect-video">
-                    <video src={magicMomentUrl} controls className="w-full h-full" autoPlay />
-                  </div>
-                </div>
-              )}
-
-              {lessonPlan && (
-                <Card className="border-primary/20 bg-primary/5 animate-in slide-in-from-right-5 duration-500">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-headline text-primary">{lessonPlan.title}</CardTitle>
-                    <CardDescription>Target: 3-5 years</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <p className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Objectives</p>
-                      <ul className="list-disc pl-5 text-sm space-y-1">
-                        {lessonPlan.objectives.map((o, i) => <li key={i}>{o}</li>)}
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Steps</p>
-                      <ol className="list-decimal pl-5 text-sm space-y-2">
-                        {lessonPlan.steps.map((s, i) => <li key={i}>{s}</li>)}
-                      </ol>
-                    </div>
-                    <div className="pt-2 border-t text-xs italic text-muted-foreground">
-                      Generated in {planLanguage}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="pt-6 space-y-6">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Lesson Plan Language</label>
-                      <Select value={planLanguage} onValueChange={(val: any) => setPlanLanguage(val)}>
-                        <SelectTrigger className="w-full bg-muted/30">
-                          <Languages className="w-4 h-4 mr-2" />
-                          <SelectValue placeholder="Select Language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="English">English</SelectItem>
-                          <SelectItem value="Tamil">Tamil (தமிழ்)</SelectItem>
-                          <SelectItem value="Hindi">Hindi (हिन्दी)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button 
-                      onClick={handleGenerateLessonPlan} 
-                      disabled={isGeneratingPlan}
-                      variant="outline" 
-                      className="font-headline font-bold gap-2"
-                    >
-                      {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
-                      Generate Lesson Plan
-                    </Button>
-                    <Button 
-                      onClick={handleGenerateMagicMoment}
-                      disabled={isGeneratingVideo}
-                      className="font-headline font-bold bg-accent hover:bg-accent/90 gap-2"
-                    >
-                      {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      Create Magic Moment
-                    </Button>
+                    <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
+                    <SheetDescription className="font-body text-base">NoteGPT-style Study Content</SheetDescription>
                   </div>
                 </div>
               </div>
 
-              {selectedResource.transcript && (
-                <div className="space-y-3 pt-4 border-t">
-                  <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                    Transcript
-                  </h4>
-                  <ScrollArea className="h-48 rounded-2xl border bg-muted/20 p-6">
-                    <p className="font-body text-base leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                      {selectedResource.transcript}
-                    </p>
-                  </ScrollArea>
+              <div className="flex-1 p-6">
+                <Tabs defaultValue="summary" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 bg-muted/30">
+                    <TabsTrigger value="summary">Summary</TabsTrigger>
+                    <TabsTrigger value="concepts">Concepts</TabsTrigger>
+                    <TabsTrigger value="study">Study Kit</TabsTrigger>
+                    <TabsTrigger value="multilingual">Translate</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="summary" className="pt-6 space-y-6">
+                    <div className="space-y-2">
+                      <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-accent" /> AI Pedagogical Analysis
+                      </h4>
+                      <p className="text-lg font-body leading-relaxed text-muted-foreground italic bg-accent/5 p-4 rounded-xl border border-accent/10">
+                        "{selectedResource.aiContent?.summary || selectedResource.summary}"
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Activity Suggestions</h4>
+                      <div className="grid gap-3">
+                        {(selectedResource.aiContent?.activitySuggestions || selectedResource.keyActivities).map((act, i) => (
+                          <div key={i} className="flex items-center gap-3 p-3 bg-white border rounded-xl shadow-sm">
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">{i+1}</div>
+                            <span className="text-sm font-body">{act}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="concepts" className="pt-6 space-y-4">
+                    <h4 className="font-headline font-bold text-lg">Key Educational Concepts</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedResource.aiContent?.keyConcepts.map((concept, i) => (
+                        <Card key={i} className="bg-primary/5 border-none">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <BrainCircuit className="w-5 h-5 text-primary" />
+                            <span className="font-bold text-sm">{concept}</span>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="study" className="pt-6 space-y-8">
+                    <div className="space-y-4">
+                      <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-orange-500" /> Interactive Flashcards
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedResource.aiContent?.flashcards.map((card, i) => (
+                          <Card key={i} className="border-primary/20 hover:border-primary transition-all cursor-pointer group h-32 flex flex-col justify-center text-center">
+                            <CardContent className="p-4">
+                              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Question</p>
+                              <p className="text-sm font-body font-bold">{card.question}</p>
+                              <div className="mt-2 text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">Hover to reveal answer</div>
+                              <p className="hidden group-hover:block absolute inset-0 bg-primary text-white p-4 text-xs font-body flex items-center justify-center rounded-lg">{card.answer}</p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                        <HelpCircle className="w-5 h-5 text-blue-500" /> Quick Quiz
+                      </h4>
+                      <div className="space-y-4">
+                        {selectedResource.aiContent?.quiz.map((q, i) => (
+                          <Card key={i} className="bg-muted/30">
+                            <CardHeader className="p-4 pb-2">
+                              <CardTitle className="text-sm font-body">{q.question}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 grid grid-cols-2 gap-2">
+                              {q.options.map((opt, oi) => (
+                                <Button key={oi} variant="outline" className="text-[10px] h-8 justify-start px-2 font-body hover:bg-primary hover:text-white">
+                                  {opt}
+                                </Button>
+                              ))}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="multilingual" className="pt-6 space-y-6">
+                    <div className="space-y-6">
+                      <div className="p-6 bg-slate-50 rounded-2xl border">
+                        <h5 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                          <Languages className="w-4 h-4" /> Tamil Version (தமிழ்)
+                        </h5>
+                        <p className="text-sm font-body leading-relaxed mb-4">{selectedResource.aiContent?.translations.Tamil.summary}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedResource.aiContent?.translations.Tamil.concepts.map((c, i) => (
+                            <Badge key={i} variant="secondary" className="bg-white border text-[10px]">{c}</Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-6 bg-slate-50 rounded-2xl border">
+                        <h5 className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                          <Languages className="w-4 h-4" /> Hindi Version (हिन्दी)
+                        </h5>
+                        <p className="text-sm font-body leading-relaxed mb-4">{selectedResource.aiContent?.translations.Hindi.summary}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedResource.aiContent?.translations.Hindi.concepts.map((c, i) => (
+                            <Badge key={i} variant="secondary" className="bg-white border text-[10px]">{c}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="p-6 border-t bg-white">
+                <div className="grid grid-cols-2 gap-4">
+                   <Button variant="outline" className="gap-2" onClick={handleGenerateLessonPlan} disabled={isGeneratingPlan}>
+                     {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
+                     Curriculum Plan
+                   </Button>
+                   <Button className="gap-2 bg-accent" onClick={handleGenerateMagicMoment} disabled={isGeneratingVideo}>
+                     {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                     Magic Moment
+                   </Button>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </SheetContent>
