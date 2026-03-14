@@ -10,4 +10,4 @@ import '@/ai/flows/summarize-youtube-link.ts';
 import '@/ai/flows/generate-magic-moment-flow.ts';
 import '@/ai/flows/generate-lesson-plan.ts';
 import '@/ai/flows/process-educational-content-pipeline.ts';
-
+import '@/ai/flows/voice-to-lesson-flow.ts';
