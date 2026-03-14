@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2, TrendingUp, Star } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2, TrendingUp, AlertCircle, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import { DashboardTab, Resource } from "@/app/page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { Student } from "./TeacherDashboard";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
@@ -55,9 +55,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
 
-  // Temp state for editing
-  const [tempChildInfo, setTempChildInfo] = useState<ChildInfo>(childInfo);
-
   const { toast } = useToast();
 
   const filteredTeacherResources = useMemo(() => {
@@ -75,8 +72,9 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
       try {
         const res = await generateParentalLearningInsights({
           childName: childInfo.name,
-          classroomObservations: `${childInfo.name} showed great curiosity during the science experiment with water today. He was able to predict which items would float or sink with 80% accuracy.`,
-          processedEducationalContent: "The current curriculum focuses on early scientific inquiry and causal relationships. We are using tactile experiments to foster critical thinking."
+          classroomObservations: `${childInfo.name} has been participating well in group activities. We've noticed consistent engagement with tactile learning tools recently.`,
+          processedEducationalContent: "Our current module explores 'Physicality and Patterns' through hands-on building and sorting exercises.",
+          skills: childData?.skills
         });
         setInsights(res);
       } catch (error) {
@@ -86,7 +84,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
       }
     }
     fetchInsights();
-  }, [childInfo.name]);
+  }, [childInfo.name, childData?.skills]);
 
   const toggleActivity = (idx: number) => {
     if (completedActivities.includes(idx)) {
@@ -126,13 +124,14 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
     }
   };
 
+  const [tempChildInfo, setTempChildInfo] = useState<ChildInfo>(childInfo);
   const handleSaveRegistration = () => {
     setChildInfo(tempChildInfo);
     onRegisterChild(tempChildInfo.name, tempChildInfo.className, tempChildInfo.mentorName);
     setIsRegDialogOpen(false);
     toast({
       title: "Profile Updated",
-      description: "Student registration details have been saved and shared with the teacher."
+      description: "Student registration details have been saved."
     });
   };
 
@@ -146,7 +145,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-headline font-bold text-foreground">Welcome back, Sarah</h2>
+          <h2 className="text-3xl font-headline font-bold text-foreground">Welcome back, Parent</h2>
           <p className="text-muted-foreground font-body flex items-center gap-2">
             <Heart className="w-4 h-4 text-red-500 fill-red-500" />
             {childInfo.name}'s Learning Journey
@@ -162,46 +161,30 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
               <div className="font-body text-sm relative">
                 <p className="font-bold text-primary">{childInfo.name}</p>
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                  <School className="w-3 h-3" /> {childInfo.className} • Mentor: {childInfo.mentorName}
+                  <School className="w-3 h-3" /> {childInfo.className}
                 </div>
-                <Edit3 className="w-3 h-3 absolute -right-4 top-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </Card>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-headline text-2xl">Register Student Details</DialogTitle>
+              <DialogTitle className="font-headline text-2xl">Child Registration</DialogTitle>
               <DialogDescription>
-                Update your child's information for personalized insights. This will appear in the teacher dashboard.
+                Update your child's information for personalized AI recommendations.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Child's Name</Label>
-                <Input 
-                  id="name" 
-                  value={tempChildInfo.name} 
-                  onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})}
-                  className="bg-muted/30"
-                />
+                <Input id="name" value={tempChildInfo.name} onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="class">Class / Section</Label>
-                <Input 
-                  id="class" 
-                  value={tempChildInfo.className} 
-                  onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})}
-                  className="bg-muted/30"
-                />
+                <Label htmlFor="class">Class</Label>
+                <Input id="class" value={tempChildInfo.className} onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="mentor">Mentor / Teacher Name</Label>
-                <Input 
-                  id="mentor" 
-                  value={tempChildInfo.mentorName} 
-                  onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})}
-                  className="bg-muted/30"
-                />
+                <Label htmlFor="mentor">Mentor Name</Label>
+                <Input id="mentor" value={tempChildInfo.mentorName} onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})} />
               </div>
             </div>
             <DialogFooter>
@@ -215,7 +198,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
 
       {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Learning Summary */}
           <Card className="border-none shadow-lg overflow-hidden flex flex-col">
             <CardHeader className="bg-primary text-white p-6">
               <div className="flex justify-between items-start">
@@ -241,7 +223,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
                 <div className="space-y-4">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-[90%]" />
-                  <Skeleton className="h-4 w-[95%]" />
                 </div>
               ) : (
                 <p className="text-lg font-body leading-relaxed text-muted-foreground">
@@ -251,11 +232,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
             </CardContent>
           </Card>
 
-          {/* Connection Stats */}
           <div className="grid grid-cols-1 gap-6">
             <Card className="hover:shadow-md transition-all">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Home-School Connection</CardTitle>
+                <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -270,17 +250,17 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
                 <Progress value={connectionScore} className="h-2" />
               </CardContent>
             </Card>
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6 flex items-center gap-6">
-                <div className="p-4 bg-blue-50 rounded-2xl">
-                  <Book className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Recent Milestones</p>
-                  <p className="text-2xl font-bold font-headline">Scientific Inquiry</p>
-                </div>
-              </CardContent>
-            </Card>
+
+            {/* AI Personalized Learning Recommendations Alert */}
+            {insights?.targetedIntervention && (
+              <Alert className="bg-blue-50 border-blue-200 border-2">
+                <Lightbulb className="h-5 w-5 text-blue-600" />
+                <AlertTitle className="text-blue-800 font-headline text-lg font-bold">Personalized Learning Recommendation</AlertTitle>
+                <AlertDescription className="text-blue-700 font-body mt-2">
+                  {insights.targetedIntervention}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
       )}
@@ -317,7 +297,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
         </div>
       )}
 
-      {/* Home Activities / Insights Tab */}
+      {/* Insights Tab */}
       {(activeTab === "dashboard" || activeTab === "insights") && (
         <div className="space-y-8">
           <div className="flex items-center justify-between">
@@ -333,7 +313,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
                   <CardTitle className="text-lg font-headline flex items-center gap-2">
                     <Target className="w-5 h-5" /> Learning Milestones
                   </CardTitle>
-                  <CardDescription>Progress tracked across core skills</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-6">
@@ -360,9 +339,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
              <Card className="bg-primary/5 border-primary/20">
                 <CardHeader>
                   <CardTitle className="text-lg font-headline flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" /> Learning Progress Over Time
+                    <TrendingUp className="w-5 h-5" /> Learning Progress
                   </CardTitle>
-                  <CardDescription>Developmental score aggregated monthly</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-56 w-full">
@@ -378,7 +356,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
                           stroke="hsl(var(--primary))" 
                           strokeWidth={3} 
                           dot={{ r: 4, fill: "hsl(var(--primary))" }} 
-                          activeDot={{ r: 6 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -390,15 +367,13 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
           <div className="space-y-4">
             <h4 className="text-xl font-headline font-bold flex items-center gap-2">
               <Home className="w-6 h-6 text-accent" />
-              Home Activity Suggestions
+              Tailored Home Activities
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {isLoading ? (
                 [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
               ) : (
-                insights?.homeActivitySuggestions
-                  .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((act, idx) => (
+                insights?.homeActivitySuggestions.map((act, idx) => (
                   <Card 
                     key={idx} 
                     className={cn(
@@ -408,19 +383,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
                     onClick={() => toggleActivity(idx)}
                   >
                     <CardContent className="p-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className={cn(
-                          "p-2 rounded-lg transition-colors",
-                          completedActivities.includes(idx) ? "bg-accent text-white" : "bg-accent/10 group-hover:bg-accent group-hover:text-white"
-                        )}>
-                          {completedActivities.includes(idx) ? <CheckCircle2 className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </div>
-                        <Badge variant="outline" className="text-[10px] opacity-60">
-                          {completedActivities.includes(idx) ? "Completed" : `Activity ${idx + 1}`}
-                        </Badge>
-                      </div>
                       <p className={cn(
-                        "font-body text-base leading-snug transition-colors",
+                        "font-body text-base leading-snug",
                         completedActivities.includes(idx) ? "text-accent font-bold" : "text-foreground"
                       )}>
                         {act}
@@ -440,28 +404,12 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
           {selectedResource && (
             <div className="space-y-6 py-6">
               <SheetHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-primary/10 rounded-xl">
-                    {getIcon(selectedResource.fileType)}
-                  </div>
-                  <div>
-                    <SheetTitle>{selectedResource.fileName}</SheetTitle>
-                    <SheetDescription>Shared by Teacher {childInfo.mentorName}</SheetDescription>
-                  </div>
-                </div>
+                <SheetTitle>{selectedResource.fileName}</SheetTitle>
               </SheetHeader>
               <div className="space-y-4">
                 <h4 className="font-headline font-bold text-lg">Activity Summary</h4>
-                <div className="p-4 bg-muted/50 rounded-xl font-body text-lg italic">
+                <div className="p-4 bg-muted/50 rounded-xl font-body italic">
                   "{selectedResource.summary}"
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-headline font-bold">Key Activities</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedResource.keyActivities.map((act, i) => (
-                      <Badge key={i} variant="secondary">{act}</Badge>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>

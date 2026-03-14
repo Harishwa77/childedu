@@ -18,6 +18,12 @@ const ParentalLearningInsightsInputSchema = z.object({
   processedEducationalContent: z
     .string()
     .describe("A summary of relevant processed educational content for the child."),
+  skills: z.object({
+    language: z.number(),
+    numeracy: z.number(),
+    social: z.number(),
+    motor: z.number(),
+  }).optional().describe("The child's current skill levels (0-100)."),
 });
 export type ParentalLearningInsightsInput = z.infer<typeof ParentalLearningInsightsInputSchema>;
 
@@ -28,6 +34,10 @@ const ParentalLearningInsightsOutputSchema = z.object({
   homeActivitySuggestions: z
     .array(z.string())
     .describe("A list of tailored suggestions for home activities to support the child's development."),
+  targetedIntervention: z
+    .string()
+    .optional()
+    .describe("A specific recommendation if the child is struggling in a particular area."),
 });
 export type ParentalLearningInsightsOutput = z.infer<typeof ParentalLearningInsightsOutputSchema>;
 
@@ -43,7 +53,7 @@ const parentalLearningInsightsPrompt = ai.definePrompt({
   output: {schema: ParentalLearningInsightsOutputSchema},
   prompt: `You are an AI assistant designed to provide personalized learning insights and home activity suggestions to parents.
 
-Your task is to analyze the provided information about a child's classroom observations and relevant educational content to generate a clear summary of their learning progress and actionable home activity suggestions.
+Your task is to analyze the provided information about a child's classroom observations, relevant educational content, and their current developmental skill levels to generate a clear summary and actionable home activity suggestions.
 
 Child's Name: {{{childName}}}
 
@@ -53,9 +63,20 @@ Classroom Observations Summary:
 Processed Educational Content Summary:
 {{{processedEducationalContent}}}
 
+Current Skill Levels (0-100):
+{{#if skills}}
+- Language: {{{skills.language}}}
+- Numeracy: {{{skills.numeracy}}}
+- Social: {{{skills.social}}}
+- Motor: {{{skills.motor}}}
+{{else}}
+- Skill data not provided.
+{{/if}}
+
 Based on this information, generate:
-1. A concise, personalized summary of {{{childName}}}'s learning progress, highlighting key achievements and areas for development.
-2. A list of 3-5 tailored home activity suggestions that align with their current learning and support their development. Each suggestion should be practical and easy for parents to implement.
+1. A concise, personalized summary of {{{childName}}}'s learning progress.
+2. A list of 3-5 tailored home activity suggestions. 
+3. TARGETED RECOMMENDATION: If the child has any skill score below 70, provide a specific "Targeted Intervention" for that area (e.g., if struggling with numbers, suggest counting games or visual number activities).
 
 Ensure the tone is encouraging and supportive.`,
 });
