@@ -64,6 +64,7 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
           
           setTimeout(() => {
             onProcessed({
+              id: Math.random().toString(36).substring(2, 11), // Generate a unique ID for React keys
               ...result,
               fileName: file.name,
               fileType: file.type,
