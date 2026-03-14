@@ -1,8 +1,7 @@
-
 "use client";
 
 import { ReactNode } from "react";
-import { LogOut, Bell, Search, UserCircle } from "lucide-react";
+import { LogOut, Bell, Search, UserCircle, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
@@ -43,7 +42,7 @@ export function DashboardLayout({
             <span className="font-headline text-xl font-bold text-primary tracking-tight">EduSense AI</span>
           </div>
           
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-2">
             <Button 
               variant="ghost" 
               onClick={() => onTabChange("dashboard")}
@@ -73,6 +72,17 @@ export function DashboardLayout({
               )}
             >
               Insights
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("learning-hub")}
+              className={cn(
+                "text-sm font-medium transition-colors gap-2",
+                activeTab === "learning-hub" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Basics Hub
             </Button>
           </nav>
         </div>

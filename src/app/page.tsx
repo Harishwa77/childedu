@@ -6,7 +6,10 @@ import { DashboardTab, DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
 import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
+
+export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
 
 export interface ResourceAnalysis {
   activityName: string;
@@ -154,6 +157,10 @@ export default function Home() {
   };
 
   const renderDashboard = () => {
+    if (activeTab === "learning-hub") {
+      return <KinderLearningHub />;
+    }
+
     switch (activeRole) {
       case "teacher":
         return <TeacherDashboard searchQuery={searchQuery} activeTab={activeTab} resources={resources} setResources={setResources} roster={roster} setRoster={setRoster} />;
