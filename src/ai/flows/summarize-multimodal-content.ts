@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow for summarizing multimodal educational content using Gemini 2.5 Flash.
+ * @fileOverview A Genkit flow for summarizing multimodal educational content using Gemini 2.0 Flash.
  *
  * - summarizeMultimodalContent - A function that processes uploaded multimodal content
  *   (audio, video, documents, images), transcribes audio/video, identifies key activities,
@@ -57,7 +57,7 @@ export async function summarizeMultimodalContent(
 // Genkit Prompt Definition
 const summarizePrompt = ai.definePrompt({
   name: 'summarizeMultimodalContentPrompt',
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: SummarizeMultimodalContentInputSchema},
   output: {schema: SummarizeMultimodalContentOutputSchema},
   prompt: `You are an expert AI assistant specialized in educational content analysis for early childhood development.
