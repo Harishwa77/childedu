@@ -9,60 +9,12 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
-
-export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
-
-export interface ResourceAnalysis {
-  activityName: string;
-  studentEngagement: "High" | "Medium" | "Low";
-  participationPatterns: string;
-  teachingEffectiveness: string;
-  recommendedImprovement: string;
-}
-
-export interface AILessonContent {
-  summary: string;
-  keyConcepts: string[];
-  curriculumObjectives: string[];
-  targetAge: string;
-  skillsMapped: string[];
-  flashcards: { question: string; answer: string }[];
-  quiz: { question: string; options: string[]; correctAnswer: string }[];
-  activitySuggestions: string[];
-  translations: {
-    Tamil: { summary: string; concepts: string[] };
-    Hindi: { summary: string; concepts: string[] };
-  };
-}
-
-export interface Resource {
-  id: string;
-  fileName: string;
-  summary: string;
-  keyActivities: string[];
-  transcript?: string;
-  fileType: string;
-  timestamp: string;
-  analysis?: ResourceAnalysis;
-  targetStudentId?: string;
-  aiContent?: AILessonContent;
-}
-
-export interface ChildRegistrationInfo {
-  name: string;
-  className: string;
-  mentorName: string;
-}
-
-export interface UserMessage {
-  id: string;
-  from: string;
-  to: string; // "Teacher" or "Parent" or specific name
-  subject: string;
-  text: string;
-  date: string;
-  read: boolean;
-}
+import { 
+  DashboardTab, 
+  Resource, 
+  ChildRegistrationInfo, 
+  UserMessage 
+} from "@/app/types";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,7 +22,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Local state for resources (Replaces Firestore for this request)
+  // Local state for resources
   const [resources, setResources] = useState<Resource[]>([]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({

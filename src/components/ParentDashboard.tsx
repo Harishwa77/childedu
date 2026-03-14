@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -9,12 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
+import { generateParentalLearningInsights, type ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
-import { generateBedtimeStory, BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
-import { generatePersonalizedStudyPlan, PersonalizedStudyPlanOutput } from "@/ai/flows/generate-personalized-study-plan";
+import { generateBedtimeStory, type BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
+import { generatePersonalizedStudyPlan, type PersonalizedStudyPlanOutput } from "@/ai/flows/generate-personalized-study-plan";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardTab, Resource, ChildRegistrationInfo, UserMessage } from "@/app/page";
+import { 
+  DashboardTab, 
+  Resource, 
+  ChildRegistrationInfo, 
+  UserMessage 
+} from "@/app/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

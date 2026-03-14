@@ -12,8 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { DashboardTab, Resource, UserMessage } from "@/app/page";
-import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
+import { DashboardTab, Resource, UserMessage } from "@/app/types";
+import { generateLessonPlan, type LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

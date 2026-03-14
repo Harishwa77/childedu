@@ -5,7 +5,7 @@ import { LogOut, Bell, Search, UserCircle, GraduationCap, ArrowRightLeft } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
-import { DashboardTab, Resource } from "@/app/page";
+import { DashboardTab, Resource } from "@/app/types";
 import { Student } from "./TeacherDashboard";
 import { Role } from "./RoleSelector";
 import { cn } from "@/lib/utils";
