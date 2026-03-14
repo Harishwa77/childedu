@@ -11,9 +11,11 @@ interface DashboardLayoutProps {
   children: ReactNode;
   role: string;
   onLogout: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
-export function DashboardLayout({ children, role, onLogout }: DashboardLayoutProps) {
+export function DashboardLayout({ children, role, onLogout, searchQuery, onSearchChange }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -37,6 +39,8 @@ export function DashboardLayout({ children, role, onLogout }: DashboardLayoutPro
             <Input 
               placeholder="Search resources..." 
               className="w-64 pl-9 bg-accent/5 border-none focus-visible:ring-1" 
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
           

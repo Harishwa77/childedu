@@ -1,8 +1,9 @@
+
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, Languages } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useMemo } from "react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UploadModal } from "./UploadModal";
@@ -10,7 +11,7 @@ import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
-export function TeacherDashboard() {
+export function TeacherDashboard({ searchQuery }: { searchQuery: string }) {
   const [resources, setResources] = useState<any[]>([
     {
       id: "1",
@@ -34,9 +35,18 @@ export function TeacherDashboard() {
 
   const [selectedResource, setSelectedResource] = useState<any | null>(null);
 
+  const filteredResources = useMemo(() => {
+    if (!searchQuery.trim()) return resources;
+    const query = searchQuery.toLowerCase();
+    return resources.filter(res => 
+      res.fileName.toLowerCase().includes(query) ||
+      res.summary.toLowerCase().includes(query) ||
+      res.keyActivities?.some((act: string) => act.toLowerCase().includes(query))
+    );
+  }, [resources, searchQuery]);
+
   const handleNewProcessed = (data: any) => {
     setResources(prev => [data, ...prev]);
-    // Automatically "go into" the resource to study it
     setSelectedResource(data);
   };
 
@@ -109,49 +119,56 @@ export function TeacherDashboard() {
         {/* Recent Resources */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-headline font-bold">Processed Resources</h3>
-            <span className="text-xs text-muted-foreground font-body">{resources.length} total items</span>
+            <h3 className="text-xl font-headline font-bold">
+              {searchQuery ? `Search Results for "${searchQuery}"` : "Processed Resources"}
+            </h3>
+            <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
           </div>
           <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
             <div className="space-y-4">
-              {resources.map((res) => (
-                <Card 
-                  key={res.id} 
-                  className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
-                  onClick={() => setSelectedResource(res)}
-                >
-                  <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                      <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-3 space-y-3">
-                    <p className="text-sm text-muted-foreground font-body italic leading-relaxed line-clamp-2">
-                      "{res.summary}"
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {res.keyActivities?.slice(0, 2).map((act: string, idx: number) => (
-                        <Badge key={idx} variant="outline" className="text-[10px] uppercase font-bold text-accent border-accent/20">
-                          {act}
-                        </Badge>
-                      ))}
-                      {res.keyActivities?.length > 2 && (
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground">
-                          +{res.keyActivities.length - 2} more
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-2">
-                      <Clock className="w-3 h-3" />
-                      {new Date(res.timestamp).toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {filteredResources.length > 0 ? (
+                filteredResources.map((res) => (
+                  <Card 
+                    key={res.id} 
+                    className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
+                    onClick={() => setSelectedResource(res)}
+                  >
+                    <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+                        <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-3 space-y-3">
+                      <p className="text-sm text-muted-foreground font-body italic leading-relaxed line-clamp-2">
+                        "{res.summary}"
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {res.keyActivities?.slice(0, 2).map((act: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-[10px] uppercase font-bold text-accent border-accent/20">
+                            {act}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-2">
+                        <Clock className="w-3 h-3" />
+                        {new Date(res.timestamp).toLocaleString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-2">
+                  <div className="p-4 bg-muted rounded-full">
+                    <FileText className="w-8 h-8 text-muted-foreground opacity-20" />
+                  </div>
+                  <p className="font-headline font-bold text-lg text-muted-foreground">No matching resources</p>
+                  <p className="font-body text-sm text-muted-foreground/60">Try searching for a different keyword or filename.</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>

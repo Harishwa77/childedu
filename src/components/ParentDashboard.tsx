@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,7 +11,7 @@ import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
-export function ParentDashboard() {
+export function ParentDashboard({ searchQuery }: { searchQuery: string }) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -145,7 +146,9 @@ export function ParentDashboard() {
           {isLoading ? (
             [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
           ) : (
-            insights?.homeActivitySuggestions.map((act, idx) => (
+            insights?.homeActivitySuggestions
+              .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((act, idx) => (
               <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
