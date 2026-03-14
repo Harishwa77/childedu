@@ -2,10 +2,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,11 +23,29 @@ interface ParentDashboardProps {
   resources: Resource[];
 }
 
+interface ChildInfo {
+  name: string;
+  className: string;
+  mentorName: string;
+}
+
 export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
+  
+  // Child Profile State
+  const [childInfo, setChildInfo] = useState<ChildInfo>({
+    name: "Leo Johnson",
+    className: "Preschool Class B",
+    mentorName: "Ms. Clara"
+  });
+  
+  // Temp state for editing
+  const [tempChildInfo, setTempChildInfo] = useState<ChildInfo>(childInfo);
+
   const { toast } = useToast();
 
   const filteredTeacherResources = useMemo(() => {
@@ -40,8 +61,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
     async function fetchInsights() {
       try {
         const res = await generateParentalLearningInsights({
-          childName: "Leo",
-          classroomObservations: "Leo showed great curiosity during the science experiment with water today. He was able to predict which items would float or sink with 80% accuracy.",
+          childName: childInfo.name,
+          classroomObservations: `${childInfo.name} showed great curiosity during the science experiment with water today. He was able to predict which items would float or sink with 80% accuracy.`,
           processedEducationalContent: "The current curriculum focuses on early scientific inquiry and causal relationships. We are using tactile experiments to foster critical thinking."
         });
         setInsights(res);
@@ -52,7 +73,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
       }
     }
     fetchInsights();
-  }, []);
+  }, [childInfo.name]);
 
   const handleListen = async () => {
     if (!insights || isSpeaking) return;
@@ -78,6 +99,15 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
     }
   };
 
+  const handleSaveRegistration = () => {
+    setChildInfo(tempChildInfo);
+    setIsRegDialogOpen(false);
+    toast({
+      title: "Profile Updated",
+      description: "Student registration details have been saved."
+    });
+  };
+
   const getIcon = (type: string) => {
     if (type.includes("video")) return <Video className="w-5 h-5 text-purple-600" />;
     if (type.includes("audio")) return <Music className="w-5 h-5 text-blue-600" />;
@@ -91,20 +121,68 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
           <h2 className="text-3xl font-headline font-bold text-foreground">Welcome back, Sarah</h2>
           <p className="text-muted-foreground font-body flex items-center gap-2">
             <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-            Leo's Learning Journey
+            {childInfo.name}'s Learning Journey
           </p>
         </div>
-        <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl">
-          <div className="p-3 bg-primary/10 rounded-full">
-            <UserCircle className="w-6 h-6 text-primary" />
-          </div>
-          <div className="font-body text-sm">
-            <p className="font-bold text-primary">Leo Johnson</p>
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <School className="w-3 h-3" /> Preschool Class B • Mentor: Ms. Clara
+        
+        <Dialog open={isRegDialogOpen} onOpenChange={setIsRegDialogOpen}>
+          <DialogTrigger asChild>
+            <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-colors group">
+              <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20">
+                <UserCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div className="font-body text-sm relative">
+                <p className="font-bold text-primary">{childInfo.name}</p>
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <School className="w-3 h-3" /> {childInfo.className} • Mentor: {childInfo.mentorName}
+                </div>
+                <Edit3 className="w-3 h-3 absolute -right-4 top-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="font-headline text-2xl">Register Student Details</DialogTitle>
+              <DialogDescription>
+                Update your child's information for personalized insights.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Child's Name</Label>
+                <Input 
+                  id="name" 
+                  value={tempChildInfo.name} 
+                  onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})}
+                  className="bg-muted/30"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="class">Class / Section</Label>
+                <Input 
+                  id="class" 
+                  value={tempChildInfo.className} 
+                  onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})}
+                  className="bg-muted/30"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="mentor">Mentor / Teacher Name</Label>
+                <Input 
+                  id="mentor" 
+                  value={tempChildInfo.mentorName} 
+                  onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})}
+                  className="bg-muted/30"
+                />
+              </div>
             </div>
-          </div>
-        </Card>
+            <DialogFooter>
+              <Button onClick={handleSaveRegistration} className="gap-2">
+                <Save className="w-4 h-4" /> Save Registration
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {activeTab === "dashboard" && (
@@ -117,7 +195,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
                   <CardTitle className="font-headline text-2xl flex items-center gap-2">
                     <Sparkles className="w-6 h-6" /> Classroom Insight
                   </CardTitle>
-                  <CardDescription className="text-white/80 font-body">AI-generated summary of Leo's week</CardDescription>
+                  <CardDescription className="text-white/80 font-body">AI-generated summary of {childInfo.name}'s week</CardDescription>
                 </div>
                 <Button 
                   size="icon" 
