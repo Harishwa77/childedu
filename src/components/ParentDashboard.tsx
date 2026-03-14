@@ -20,6 +20,7 @@ import { Student } from "./TeacherDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { TranslationSelector } from "./TranslationSelector";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -157,9 +158,16 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                   <CardTitle className="font-headline text-2xl flex items-center gap-2"><Sparkles className="w-6 h-6" /> Skill Progress</CardTitle>
                   <CardDescription className="text-white/80 font-body">Knowledge Graph Insight for {childInfo.name}</CardDescription>
                 </div>
-                <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handleListen} disabled={isLoading || isSpeaking}>
-                  {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
-                </Button>
+                <div className="flex items-center gap-2">
+                   <TranslationSelector 
+                    content={insights?.learningSummary || ""} 
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    onTranslate={(val) => setInsights(insights ? { ...insights, learningSummary: val } : null)} 
+                  />
+                  <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handleListen} disabled={isLoading || isSpeaking}>
+                    {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-6">
@@ -235,9 +243,24 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
 
                 <TabsContent value="home-kit" className="pt-8 space-y-8">
                   <div className="space-y-4">
-                    <h4 className="text-xl font-headline font-bold flex items-center gap-2">
-                      <BrainCircuit className="w-6 h-6 text-primary" /> Multi-Skill Insights
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                        <BrainCircuit className="w-6 h-6 text-primary" /> Multi-Skill Insights
+                      </h4>
+                      <TranslationSelector 
+                        content={selectedResource.aiContent?.summary || selectedResource.summary} 
+                        onTranslate={(val) => {
+                          if (selectedResource.aiContent) {
+                            setSelectedResource({
+                              ...selectedResource,
+                              aiContent: { ...selectedResource.aiContent, summary: val }
+                            });
+                          } else {
+                            setSelectedResource({ ...selectedResource, summary: val });
+                          }
+                        }}
+                      />
+                    </div>
                     <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10">
                       <p className="text-base font-body leading-relaxed">{selectedResource.aiContent?.summary || selectedResource.summary}</p>
                     </div>

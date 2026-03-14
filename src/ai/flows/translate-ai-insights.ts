@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for translating AI-generated summaries, insights, or recommendations
- * into Tamil, English, or Hindi.
+ * into 12+ Indian languages.
  *
  * - translateAiInsights - A function that handles the translation process.
  * - TranslateAiInsightsInput - The input type for the translateAiInsights function.
@@ -11,9 +11,25 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const IndianLanguagesEnum = z.enum([
+  'English',
+  'Hindi',
+  'Tamil',
+  'Telugu',
+  'Bengali',
+  'Marathi',
+  'Gujarati',
+  'Kannada',
+  'Malayalam',
+  'Punjabi',
+  'Odia',
+  'Assamese',
+  'Urdu'
+]);
+
 const TranslateAiInsightsInputSchema = z.object({
   content: z.string().describe('The AI-generated text content to be translated.'),
-  targetLanguage: z.enum(['Tamil', 'English', 'Hindi']).describe('The target language for the translation.'),
+  targetLanguage: IndianLanguagesEnum.describe('The target language for the translation.'),
 });
 export type TranslateAiInsightsInput = z.infer<typeof TranslateAiInsightsInputSchema>;
 
@@ -30,7 +46,9 @@ const prompt = ai.definePrompt({
   name: 'translateAiInsightsPrompt',
   input: {schema: TranslateAiInsightsInputSchema},
   output: {schema: TranslateAiInsightsOutputSchema},
-  prompt: `You are a highly skilled multilingual translator. Your task is to accurately and naturally translate the provided text content into the specified target language.
+  prompt: `You are a highly skilled multilingual translator specialized in Indian languages and educational terminology. 
+Your task is to accurately and naturally translate the provided educational text content into the specified target language. 
+Maintain the encouraging and professional tone suitable for teachers and parents.
 
 Content to translate: {{{content}}}
 Target Language: {{{targetLanguage}}}`,

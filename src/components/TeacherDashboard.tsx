@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { TranslationSelector } from "./TranslationSelector";
 
 export interface Student {
   id: string;
@@ -48,7 +49,6 @@ interface TeacherDashboardProps {
 export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster }: TeacherDashboardProps) {
   const { toast } = useToast();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
@@ -291,7 +291,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                   <div className="p-3 bg-white rounded-2xl shadow-sm">
                     {getIcon(selectedResource.fileType)}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
                     <div className="flex gap-2 mt-1">
                       <Badge className="bg-primary/20 text-primary border-none">{selectedResource.aiContent?.targetAge || "All Ages"}</Badge>
@@ -311,13 +311,15 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
 
                   <TabsContent value="knowledge" className="pt-6 space-y-6">
                     <div className="p-4 bg-accent/5 border border-accent/10 rounded-xl space-y-4">
-                      <h4 className="font-headline font-bold text-lg flex items-center gap-2">
-                        <BrainCircuit className="w-5 h-5 text-accent" /> Semantic Connections
-                      </h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                          <BrainCircuit className="w-5 h-5 text-accent" /> Semantic Connections
+                        </h4>
+                      </div>
                       <div className="space-y-4">
                         <div className="flex items-start gap-3">
                           <Target className="w-5 h-5 text-red-500 mt-1" />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Curriculum Objectives</p>
                             <div className="flex flex-wrap gap-2 mt-1">
                               {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
@@ -329,7 +331,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                         <Separator />
                         <div className="flex items-start gap-3">
                           <Activity className="w-5 h-5 text-emerald-500 mt-1" />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Skills Mapped</p>
                             <div className="flex flex-wrap gap-2 mt-1">
                               {selectedResource.aiContent?.skillsMapped?.map((skill, i) => (
@@ -341,8 +343,23 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Pedagogical Summary</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Pedagogical Summary</h4>
+                        <TranslationSelector 
+                          content={selectedResource.aiContent?.summary || selectedResource.summary} 
+                          onTranslate={(val) => {
+                            if (selectedResource.aiContent) {
+                              setSelectedResource({
+                                ...selectedResource,
+                                aiContent: { ...selectedResource.aiContent, summary: val }
+                              });
+                            } else {
+                              setSelectedResource({ ...selectedResource, summary: val });
+                            }
+                          }} 
+                        />
+                      </div>
                       <p className="text-sm font-body leading-relaxed italic">"{selectedResource.aiContent?.summary || selectedResource.summary}"</p>
                     </div>
                   </TabsContent>
@@ -383,8 +400,15 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                     </div>
                     {lessonPlan && (
                       <Card className="mt-4 border-primary/20 bg-primary/5">
-                        <CardHeader className="p-4">
+                        <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
                           <CardTitle className="text-lg font-headline">{lessonPlan.title}</CardTitle>
+                          <TranslationSelector 
+                            content={`${lessonPlan.title}\n\n${lessonPlan.steps.join('\n')}`} 
+                            onTranslate={(val) => {
+                              const lines = val.split('\n');
+                              setLessonPlan({ ...lessonPlan, title: lines[0], steps: lines.slice(2) });
+                            }} 
+                          />
                         </CardHeader>
                         <CardContent className="p-4 pt-0 space-y-3">
                            <p className="text-sm font-body leading-relaxed">{lessonPlan.steps[0]}...</p>
