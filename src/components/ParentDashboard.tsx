@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,31 @@ import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardTab } from "@/app/page";
+import { DashboardTab, Resource } from "@/app/page";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
-export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
+interface ParentDashboardProps {
+  searchQuery: string;
+  activeTab?: DashboardTab;
+  resources: Resource[];
+}
+
+export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const { toast } = useToast();
+
+  const filteredTeacherResources = useMemo(() => {
+    if (!searchQuery.trim()) return resources;
+    const query = searchQuery.toLowerCase();
+    return resources.filter(res => 
+      res.fileName.toLowerCase().includes(query) ||
+      res.summary.toLowerCase().includes(query)
+    );
+  }, [resources, searchQuery]);
 
   useEffect(() => {
     async function fetchInsights() {
@@ -60,9 +78,15 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
     }
   };
 
+  const getIcon = (type: string) => {
+    if (type.includes("video")) return <Video className="w-5 h-5 text-purple-600" />;
+    if (type.includes("audio")) return <Music className="w-5 h-5 text-blue-600" />;
+    return <FileText className="w-5 h-5 text-emerald-600" />;
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-headline font-bold text-foreground">Welcome back, Sarah</h2>
           <p className="text-muted-foreground font-body flex items-center gap-2">
@@ -70,7 +94,17 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
             Leo's Learning Journey
           </p>
         </div>
-        <Badge variant="outline" className="px-4 py-1 border-primary text-primary font-bold">Preschool B</Badge>
+        <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl">
+          <div className="p-3 bg-primary/10 rounded-full">
+            <UserCircle className="w-6 h-6 text-primary" />
+          </div>
+          <div className="font-body text-sm">
+            <p className="font-bold text-primary">Leo Johnson</p>
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <School className="w-3 h-3" /> Preschool Class B • Mentor: Ms. Clara
+            </div>
+          </div>
+        </Card>
       </div>
 
       {activeTab === "dashboard" && (
@@ -135,6 +169,38 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Shared Classroom Resources Search Results */}
+      {searchQuery.trim() !== "" && (
+        <div className="space-y-4 animate-in slide-in-from-top-2">
+          <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+            <Search className="w-5 h-5 text-primary" />
+            Classroom Search Results
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredTeacherResources.length > 0 ? (
+              filteredTeacherResources.map((res) => (
+                <Card 
+                  key={res.id} 
+                  className="hover:border-primary cursor-pointer transition-all"
+                  onClick={() => setSelectedResource(res)}
+                >
+                  <CardContent className="p-4 flex gap-4 items-center">
+                    <div className="p-2 bg-muted rounded-lg">{getIcon(res.fileType)}</div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="font-bold truncate text-sm">{res.fileName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{res.summary}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No shared resources found matching your search.</p>
+            )}
           </div>
         </div>
       )}
@@ -238,6 +304,41 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
           </CardContent>
         </Card>
       )}
+
+      {/* Shared Resource Modal */}
+      <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto">
+          {selectedResource && (
+            <div className="space-y-6 py-6">
+              <SheetHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    {getIcon(selectedResource.fileType)}
+                  </div>
+                  <div>
+                    <SheetTitle>{selectedResource.fileName}</SheetTitle>
+                    <SheetDescription>Shared by Teacher Clara</SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+              <div className="space-y-4">
+                <h4 className="font-headline font-bold text-lg">Activity Summary</h4>
+                <div className="p-4 bg-muted/50 rounded-xl font-body text-lg italic">
+                  "{selectedResource.summary}"
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-headline font-bold">Key Activities</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedResource.keyActivities.map((act, i) => (
+                      <Badge key={i} variant="secondary">{act}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

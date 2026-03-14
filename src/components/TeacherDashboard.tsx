@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -10,35 +11,21 @@ import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DashboardTab } from "@/app/page";
+import { DashboardTab, Resource } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
 
-export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
-  const { toast } = useToast();
-  const [resources, setResources] = useState<any[]>([
-    {
-      id: "1",
-      fileName: "Classroom_Play_Session.mp4",
-      summary: "Observation of group dynamic during tactile block play. High engagement in structural building.",
-      keyActivities: ["Social interaction", "Spatial reasoning", "Cooperative play"],
-      transcript: "Teacher: Okay class, let's see how high we can build this tower. Leo, can you pass that blue block? Good job. Let's work together to make sure it doesn't fall.",
-      fileType: "video/mp4",
-      timestamp: "2024-05-15T10:30:00Z"
-    },
-    {
-      id: "2",
-      fileName: "Math_Lesson_VoiceNote.wav",
-      summary: "Reflection on early numeracy curriculum. Students showed difficulty with subtraction but excelled in pattern recognition.",
-      keyActivities: ["Pattern sorting", "Counting 1-10", "Reflection"],
-      transcript: "In today's lesson, we covered basic pattern recognition. Most students were able to identify ABAB patterns. We struggled a bit with the introduction of subtraction concepts...",
-      fileType: "audio/wav",
-      timestamp: "2024-05-14T14:45:00Z"
-    }
-  ]);
+interface TeacherDashboardProps {
+  searchQuery: string;
+  activeTab?: DashboardTab;
+  resources: Resource[];
+  setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
+}
 
-  const [selectedResource, setSelectedResource] = useState<any | null>(null);
+export function TeacherDashboard({ searchQuery, activeTab, resources, setResources }: TeacherDashboardProps) {
+  const { toast } = useToast();
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);

@@ -11,17 +11,62 @@ import { Toaster } from "@/components/ui/toaster";
 
 export type DashboardTab = "dashboard" | "resources" | "insights";
 
+export interface Resource {
+  id: string;
+  fileName: string;
+  summary: string;
+  keyActivities: string[];
+  transcript?: string;
+  fileType: string;
+  timestamp: string;
+}
+
 export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Shared resources state between Teacher and Parent
+  const [resources, setResources] = useState<Resource[]>([
+    {
+      id: "1",
+      fileName: "Classroom_Play_Session.mp4",
+      summary: "Observation of group dynamic during tactile block play. High engagement in structural building.",
+      keyActivities: ["Social interaction", "Spatial reasoning", "Cooperative play"],
+      transcript: "Teacher: Okay class, let's see how high we can build this tower. Leo, can you pass that blue block? Good job. Let's work together to make sure it doesn't fall.",
+      fileType: "video/mp4",
+      timestamp: "2024-05-15T10:30:00Z"
+    },
+    {
+      id: "2",
+      fileName: "Math_Lesson_VoiceNote.wav",
+      summary: "Reflection on early numeracy curriculum. Students showed difficulty with subtraction but excelled in pattern recognition.",
+      keyActivities: ["Pattern sorting", "Counting 1-10", "Reflection"],
+      transcript: "In today's lesson, we covered basic pattern recognition. Most students were able to identify ABAB patterns. We struggled a bit with the introduction of subtraction concepts...",
+      fileType: "audio/wav",
+      timestamp: "2024-05-14T14:45:00Z"
+    }
+  ]);
 
   const renderDashboard = () => {
     switch (activeRole) {
       case "teacher":
-        return <TeacherDashboard searchQuery={searchQuery} activeTab={activeTab} />;
+        return (
+          <TeacherDashboard 
+            searchQuery={searchQuery} 
+            activeTab={activeTab} 
+            resources={resources}
+            setResources={setResources}
+          />
+        );
       case "parent":
-        return <ParentDashboard searchQuery={searchQuery} activeTab={activeTab} />;
+        return (
+          <ParentDashboard 
+            searchQuery={searchQuery} 
+            activeTab={activeTab} 
+            resources={resources}
+          />
+        );
       case "admin":
         return <AdminDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       default:
