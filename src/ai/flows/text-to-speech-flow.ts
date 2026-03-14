@@ -35,9 +35,7 @@ const textToSpeechFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp', // Use a model that supports TTS capabilities if available via plugin
-      // Note: In a real environment, you'd use the specific TTS model ID if supported by the plugin directly.
-      // For this prototype, we simulate the structure provided in documentation.
+      model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
