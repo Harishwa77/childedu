@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -227,9 +227,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               </div>
 
               <Tabs defaultValue="home-kit" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/30 max-w-md mx-auto">
-                  <TabsTrigger value="home-kit" className="gap-2"><Home className="w-4 h-4" /> Home Learning Pack</TabsTrigger>
-                  <TabsTrigger value="objectives" className="gap-2"><Target className="w-4 h-4" /> Learning Objectives</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-muted/30 max-w-lg mx-auto">
+                  <TabsTrigger value="home-kit" className="gap-2"><Home className="w-4 h-4" /> Home Pack</TabsTrigger>
+                  <TabsTrigger value="study-kit" className="gap-2"><BookOpen className="w-4 h-4" /> Study Kit</TabsTrigger>
+                  <TabsTrigger value="objectives" className="gap-2"><Target className="w-4 h-4" /> Curriculum</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="home-kit" className="pt-8 space-y-8">
@@ -253,6 +254,62 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                       ))}
                     </div>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="study-kit" className="pt-8 space-y-8">
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                      <Sparkles className="w-6 h-6 text-primary" /> Interactive Flashcards
+                    </h4>
+                    <p className="text-sm text-muted-foreground font-body">Hover or tap cards to reveal curriculum answers.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedResource.aiContent?.flashcards?.map((card, i) => (
+                        <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center">
+                           <div className="absolute top-0 right-0 p-2 opacity-10"><BookOpen className="w-8 h-8" /></div>
+                           <p className="text-xs font-bold text-primary mb-2 uppercase tracking-widest">Question</p>
+                           <p className="text-sm font-bold leading-tight group-hover:hidden">{card.question}</p>
+                           <div className="hidden group-hover:block animate-in fade-in duration-300">
+                             <p className="text-xs font-bold text-emerald-600 mb-1 uppercase tracking-widest">Answer</p>
+                             <p className="text-sm font-body italic text-muted-foreground">{card.answer}</p>
+                           </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedResource.aiContent?.quiz && selectedResource.aiContent.quiz.length > 0 && (
+                    <div className="space-y-6">
+                      <Separator />
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                        <Zap className="w-6 h-6 text-orange-500" /> Knowledge Check Quiz
+                      </h4>
+                      <div className="grid gap-6">
+                        {selectedResource.aiContent.quiz.map((q, i) => (
+                          <div key={i} className="space-y-3">
+                            <p className="font-bold text-lg font-headline">{i + 1}. {q.question}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {q.options.map((opt, idx) => (
+                                <Button 
+                                  key={idx} 
+                                  variant="outline" 
+                                  className="justify-start font-body h-auto py-3 px-4 text-left whitespace-normal hover:bg-primary/5 hover:border-primary/50"
+                                  onClick={() => {
+                                    if (opt === q.correctAnswer) {
+                                      toast({ title: "Correct! 🌟", description: "That's exactly right." });
+                                    } else {
+                                      toast({ variant: "destructive", title: "Try again", description: "Not quite, but keep exploring!" });
+                                    }
+                                  }}
+                                >
+                                  {opt}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="objectives" className="pt-8 space-y-8">
