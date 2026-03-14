@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
+import { LoginPage } from "@/components/LoginPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
 import { ParentDashboard } from "@/components/ParentDashboard";
@@ -66,11 +67,11 @@ export interface UserMessage {
 }
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Local state for resources instead of Firestore
   const [resources, setResources] = useState<Resource[]>([]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
@@ -163,6 +164,11 @@ export default function Home() {
     setResources(prev => prev.filter(r => r.id !== id));
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setActiveRole(null);
+  };
+
   const renderDashboard = () => {
     if (activeTab === "learning-hub") {
       return <KinderLearningHub />;
@@ -205,6 +211,15 @@ export default function Home() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <main>
+        <LoginPage onLogin={() => setIsAuthenticated(true)} />
+        <Toaster />
+      </main>
+    );
+  }
+
   if (!activeRole) {
     return (
       <main>
@@ -217,7 +232,7 @@ export default function Home() {
   return (
     <DashboardLayout 
       role={activeRole} 
-      onLogout={() => setActiveRole(null)}
+      onLogout={handleLogout}
       onRoleSwitch={(role) => setActiveRole(role)}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
