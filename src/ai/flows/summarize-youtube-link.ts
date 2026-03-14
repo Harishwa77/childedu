@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview A Genkit flow for summarizing educational content from YouTube links.
+ * @fileOverview A Genkit flow for summarizing educational content from YouTube links with pedagogical analysis.
  *
- * - summarizeYoutubeLink - A function that analyzes a YouTube URL and generates an educational summary.
+ * - summarizeYoutubeLink - A function that analyzes a YouTube URL and generates an educational summary and analysis.
  * - SummarizeYoutubeLinkInput - The input type for the summarizeYoutubeLink function.
  * - SummarizeYoutubeLinkOutput - The return type for the summarizeYoutubeLink function.
  */
@@ -25,6 +25,13 @@ const SummarizeYoutubeLinkOutputSchema = z.object({
     .string()
     .optional()
     .describe('A representative transcript or key dialogue highlights from the video.'),
+  analysis: z.object({
+    activityName: z.string().describe('The name of the primary activity detected.'),
+    studentEngagement: z.enum(['High', 'Medium', 'Low']).describe('The overall level of student engagement.'),
+    participationPatterns: z.string().describe('Observations on how students are participating.'),
+    teachingEffectiveness: z.string().describe('An assessment of the teaching methods used.'),
+    recommendedImprovement: z.string().describe('Actionable advice to improve the activity or teaching.'),
+  }).optional().describe('Pedagogical analysis for the video content.'),
 });
 export type SummarizeYoutubeLinkOutput = z.infer<typeof SummarizeYoutubeLinkOutputSchema>;
 
@@ -51,15 +58,13 @@ The following is the actual transcript retrieved from the video:
 ---
 {{{transcriptText}}}
 ---
-{{else}}
-Note: I was unable to retrieve a direct transcript for this video. Please analyze it as best as possible based on the URL and your knowledge of common educational topics.
 {{/if}}
 
 Tasks:
-1. Identify the educational purpose and core subject matter of this video.
-2. SUMMARY: Provide a concise summary of the educational value, key takeaways, and teaching methods used.
-3. ACTIVITIES: Identify and list 3-5 key teaching or learning activities (e.g., social interaction, tactile play, numeracy, literacy, creative expression).
-4. TRANSCRIPT HIGHLIGHTS: Provide a representative verbatim transcript of the most important dialogue or highlights based on the provided text.
+1. SUMMARY: Provide a concise summary of the educational value, key takeaways, and teaching methods used.
+2. ACTIVITIES: Identify and list 3-5 key teaching or learning activities.
+3. TRANSCRIPT HIGHLIGHTS: Provide a representative verbatim transcript of the most important dialogue.
+4. PEDAGOGICAL ANALYSIS: Analyze the video to determine student engagement levels, participation patterns, and teaching effectiveness. Provide a "Recommended Improvement".
 
 Ensure your response follows the requested JSON structure precisely.`,
 });
@@ -74,7 +79,6 @@ const summarizeYoutubeLinkFlow = ai.defineFlow(
     let transcriptText = "";
     
     try {
-      // Attempt to fetch the transcript to provide real context to the AI
       const transcript = await YoutubeTranscript.fetchTranscript(input.youtubeUrl);
       transcriptText = transcript.map(t => t.text).join(' ');
     } catch (e) {

@@ -1,15 +1,20 @@
-
 "use client";
 
 import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { DashboardTab, DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
 import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { Toaster } from "@/components/ui/toaster";
 
-export type DashboardTab = "dashboard" | "resources" | "insights";
+export interface ResourceAnalysis {
+  activityName: string;
+  studentEngagement: "High" | "Medium" | "Low";
+  participationPatterns: string;
+  teachingEffectiveness: string;
+  recommendedImprovement: string;
+}
 
 export interface Resource {
   id: string;
@@ -19,6 +24,7 @@ export interface Resource {
   transcript?: string;
   fileType: string;
   timestamp: string;
+  analysis?: ResourceAnalysis;
 }
 
 export default function Home() {
@@ -35,7 +41,14 @@ export default function Home() {
       keyActivities: ["Social interaction", "Spatial reasoning", "Cooperative play"],
       transcript: "Teacher: Okay class, let's see how high we can build this tower. Leo, can you pass that blue block? Good job. Let's work together to make sure it doesn't fall.",
       fileType: "video/mp4",
-      timestamp: "2024-05-15T10:30:00Z"
+      timestamp: "2024-05-15T10:30:00Z",
+      analysis: {
+        activityName: "Block Building Cooperation",
+        studentEngagement: "High",
+        participationPatterns: "Students working in pairs, shared decision making on structural stability.",
+        teachingEffectiveness: "Teacher successfully used open-ended questions to guide the activity.",
+        recommendedImprovement: "Introduce varied block shapes to increase complexity of spatial reasoning."
+      }
     },
     {
       id: "2",

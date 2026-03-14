@@ -4,7 +4,7 @@
  *
  * - summarizeMultimodalContent - A function that processes uploaded multimodal content
  *   (audio, video, documents, images), transcribes audio/video, identifies key activities,
- *   and generates a concise summary.
+ *   and generates a concise summary with pedagogical analysis.
  * - SummarizeMultimodalContentInput - The input type for the summarizeMultimodalContent function.
  * - SummarizeMultimodalContentOutput - The return type for the summarizeMultimodalContent function.
  */
@@ -41,6 +41,13 @@ const SummarizeMultimodalContentOutputSchema = z.object({
     .describe(
       'A full, verbatim transcription of any spoken dialogue in the audio or video track.'
     ),
+  analysis: z.object({
+    activityName: z.string().describe('The name of the primary activity detected.'),
+    studentEngagement: z.enum(['High', 'Medium', 'Low']).describe('The overall level of student engagement.'),
+    participationPatterns: z.string().describe('Observations on how students are participating (e.g., group dynamics, individual focus).'),
+    teachingEffectiveness: z.string().describe('An assessment of the teaching methods used.'),
+    recommendedImprovement: z.string().describe('Actionable advice to improve the activity or teaching effectiveness.'),
+  }).optional().describe('Pedagogical analysis specifically for video content.'),
 });
 export type SummarizeMultimodalContentOutput = z.infer<
   typeof SummarizeMultimodalContentOutputSchema
@@ -59,7 +66,7 @@ const summarizePrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: SummarizeMultimodalContentInputSchema},
   output: {schema: SummarizeMultimodalContentOutputSchema},
-  prompt: `You are an expert AI assistant specialized in educational content analysis.
+  prompt: `You are an expert AI assistant specialized in early childhood educational content analysis.
 You have been provided with a file of type: {{{contentType}}}.
 
 Please analyze the following content:
@@ -68,7 +75,8 @@ Please analyze the following content:
 Tasks:
 1. SUMMARY: Provide a concise summary of the visual and auditory events. Focus on educational value and the interactions taking place.
 2. ACTIVITIES: Identify and list 3-5 key teaching or learning activities demonstrated (e.g., social interaction, tactile play, numeracy, literacy, creative expression).
-3. TRANSCRIPT (CRITICAL): If the content is an audio or video file with spoken dialogue, provide a FULL, VERBATIM transcript of all spoken words. Please label speakers if possible (e.g., "Teacher:", "Child:", "Unknown:"). If there is no speech in the audio track, clearly state "No spoken dialogue detected."
+3. TRANSCRIPT: If the content is an audio or video file with spoken dialogue, provide a FULL, VERBATIM transcript of all spoken words. Label speakers (e.g., "Teacher:", "Child:").
+4. PEDAGOGICAL ANALYSIS (CRITICAL for Videos): If this is a video, analyze student engagement (High/Medium/Low), participation patterns, and teaching effectiveness. Provide a specific "Recommended Improvement" for the teacher.
 
 Ensure your response follows the requested JSON structure precisely.`,
 });

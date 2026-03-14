@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export interface Student {
   id: string;
@@ -202,7 +202,10 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                       <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                          <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                          <div className="flex flex-col">
+                             <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                             {res.analysis && <span className="text-[10px] text-primary font-bold">AI Analysis Available</span>}
+                          </div>
                         </div>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
                           <ChevronRight className="w-4 h-4" />
@@ -337,6 +340,48 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                   />
                 </div>
               </SheetHeader>
+
+              {/* AI Video Analysis Section */}
+              {selectedResource.analysis && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+                   <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-primary">
+                    <Activity className="w-5 h-5" />
+                    Classroom Video Analysis
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="bg-primary/5 border-none">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Activity</p>
+                        <p className="text-sm font-bold">{selectedResource.analysis.activityName}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-primary/5 border-none">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
+                        <Badge variant="outline" className="mt-1">{selectedResource.analysis.studentEngagement}</Badge>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="p-4 bg-muted/30 rounded-xl space-y-1">
+                      <p className="text-xs font-bold text-muted-foreground">Participation Patterns</p>
+                      <p className="text-sm font-body">{selectedResource.analysis.participationPatterns}</p>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-xl space-y-1">
+                      <p className="text-xs font-bold text-muted-foreground">Teaching Effectiveness</p>
+                      <p className="text-sm font-body">{selectedResource.analysis.teachingEffectiveness}</p>
+                    </div>
+                    <Alert className="bg-emerald-50 border-emerald-200">
+                      <AlertCircle className="h-4 w-4 text-emerald-600" />
+                      <AlertTitle className="text-emerald-800 font-bold">Recommended Improvement</AlertTitle>
+                      <AlertDescription className="text-emerald-700">
+                        {selectedResource.analysis.recommendedImprovement}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
