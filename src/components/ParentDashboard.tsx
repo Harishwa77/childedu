@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight, Info } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight, Info, Library, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,6 +100,15 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   }, [roster, childInfo.name]);
 
   const parentMessages = useMemo(() => messages.filter(m => m.to === "Parent"), [messages]);
+
+  const filteredResources = useMemo(() => {
+    if (!searchQuery.trim()) return resources;
+    const query = searchQuery.toLowerCase();
+    return resources.filter(res => 
+      res.fileName.toLowerCase().includes(query) ||
+      res.summary.toLowerCase().includes(query)
+    );
+  }, [resources, searchQuery]);
 
   useEffect(() => {
     async function fetchInsights() {
@@ -206,10 +215,31 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   };
 
   const getIcon = (type: string) => {
-    if (type.includes("video")) return <Video className="w-5 h-5 text-purple-600" />;
+    if (type.includes("video") || type.includes("youtube")) return <Video className="w-5 h-5 text-purple-600" />;
     if (type.includes("audio")) return <Music className="w-5 h-5 text-blue-600" />;
     return <FileText className="w-5 h-5 text-emerald-600" />;
   };
+
+  const ResourceList = ({ items }: { items: Resource[] }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {items.length > 0 ? items.map((res) => (
+        <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group bg-white" onClick={() => setSelectedResource(res)}>
+          <CardHeader className="p-4 flex flex-row items-center gap-3">
+            <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+            <div className="flex flex-col truncate">
+               <CardTitle className="text-sm font-semibold truncate">{res.fileName}</CardTitle>
+               <span className="text-[10px] text-muted-foreground">{new Date(res.timestamp).toLocaleDateString()}</span>
+            </div>
+          </CardHeader>
+        </Card>
+      )) : (
+        <div className="col-span-full text-center py-12 opacity-40">
+          <Filter className="w-8 h-8 mx-auto mb-2" />
+          <p className="text-sm font-body">No resources in this format.</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -342,10 +372,11 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto h-12">
-          <TabsTrigger value="overview" className="gap-2">Growth Map</TabsTrigger>
-          <TabsTrigger value="dna" className="gap-2">Learning DNA</TabsTrigger>
-          <TabsTrigger value="study-plan" className="gap-2">Adaptive Plan</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto h-12">
+          <TabsTrigger value="overview" className="gap-2 text-xs sm:text-sm">Growth Map</TabsTrigger>
+          <TabsTrigger value="dna" className="gap-2 text-xs sm:text-sm">Learning DNA</TabsTrigger>
+          <TabsTrigger value="study-plan" className="gap-2 text-xs sm:text-sm">Adaptive Plan</TabsTrigger>
+          <TabsTrigger value="vault" className="gap-2 text-xs sm:text-sm"><Library className="w-4 h-4" /> Library</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8 pt-4">
@@ -365,7 +396,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               <CardContent className="p-6 space-y-6 flex-1">
                 {isLoading ? (
                   <div className="space-y-6">
-                    {[1, 2, 3, 4].map(i => <div key={i} className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-2 w-full" /></div>)}
+                    {[1, 2, 3, 4].map(i => <div key={i} className="space-y-2"><div className="h-3 w-24 bg-muted animate-pulse rounded" /><div className="h-2 w-full bg-muted animate-pulse rounded" /></div>)}
                   </div>
                 ) : (
                   <div className="space-y-5">
@@ -647,6 +678,36 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="vault" className="pt-4 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
+              <Library className="w-6 h-6 text-primary" /> Resource Vault
+            </h3>
+          </div>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 h-10 bg-muted/30 mb-6">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="video">Videos</TabsTrigger>
+              <TabsTrigger value="audio">Audio</TabsTrigger>
+              <TabsTrigger value="docs">Docs</TabsTrigger>
+            </TabsList>
+            <div className="min-h-[400px]">
+              <TabsContent value="all" className="m-0">
+                <ResourceList items={filteredResources} />
+              </TabsContent>
+              <TabsContent value="video" className="m-0">
+                <ResourceList items={filteredResources.filter(r => r.fileType.includes("video") || r.fileType.includes("youtube"))} />
+              </TabsContent>
+              <TabsContent value="audio" className="m-0">
+                <ResourceList items={filteredResources.filter(r => r.fileType.includes("audio"))} />
+              </TabsContent>
+              <TabsContent value="docs" className="m-0">
+                <ResourceList items={filteredResources.filter(r => !r.fileType.includes("video") && !r.fileType.includes("audio") && !r.fileType.includes("youtube"))} />
+              </TabsContent>
+            </div>
+          </Tabs>
         </TabsContent>
       </Tabs>
 

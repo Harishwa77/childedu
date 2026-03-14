@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2 } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -157,7 +157,7 @@ export function TeacherDashboard({
   };
 
   const getIcon = (type: string) => {
-    if (type.includes("video")) return <Video className="w-5 h-5 text-purple-600" />;
+    if (type.includes("video") || type.includes("youtube")) return <Video className="w-5 h-5 text-purple-600" />;
     if (type.includes("audio")) return <Music className="w-5 h-5 text-blue-600" />;
     return <FileText className="w-5 h-5 text-emerald-600" />;
   };
@@ -171,6 +171,38 @@ export function TeacherDashboard({
   };
 
   const unreadMessagesCount = teacherMessages.filter(m => !m.read).length;
+
+  const ResourceList = ({ items }: { items: Resource[] }) => (
+    <div className="space-y-4">
+      {items.length > 0 ? items.map((res) => (
+        <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group" onClick={() => setSelectedResource(res)}>
+          <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+              <div className="flex flex-col">
+                 <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                 {res.aiContent && <Badge variant="secondary" className="h-4 text-[8px] mt-1">{res.aiContent.targetAge}</Badge>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDeleteResource(res.id, e)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-3">
+            <p className="text-sm text-muted-foreground font-body italic line-clamp-2">"{res.summary}"</p>
+          </CardContent>
+        </Card>
+      )) : (
+        <div className="text-center py-12 opacity-40">
+          <Filter className="w-8 h-8 mx-auto mb-2" />
+          <p className="text-sm font-body">No resources in this format.</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -232,33 +264,29 @@ export function TeacherDashboard({
               <TabsTrigger value="messages" className="gap-2"><MessageCircle className="w-4 h-4" /> Parent Inbox</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="resources" className="pt-4">
-              <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
-                <div className="space-y-4">
-                  {filteredResources.map((res) => (
-                    <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group" onClick={() => setSelectedResource(res)}>
-                      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                          <div className="flex flex-col">
-                             <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
-                             {res.aiContent && <Badge variant="secondary" className="h-4 text-[8px] mt-1">{res.aiContent.targetAge}</Badge>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDeleteResource(res.id, e)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                          <ChevronRight className="w-4 h-4" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-3">
-                        <p className="text-sm text-muted-foreground font-body italic line-clamp-2">"{res.summary}"</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
+            <TabsContent value="resources" className="pt-4 space-y-4">
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 h-8 text-[10px] bg-muted/30">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="video">Videos</TabsTrigger>
+                  <TabsTrigger value="audio">Audio</TabsTrigger>
+                  <TabsTrigger value="docs">Docs</TabsTrigger>
+                </TabsList>
+                <ScrollArea className="h-[460px] rounded-xl border bg-white p-4 mt-4">
+                  <TabsContent value="all" className="m-0">
+                    <ResourceList items={filteredResources} />
+                  </TabsContent>
+                  <TabsContent value="video" className="m-0">
+                    <ResourceList items={filteredResources.filter(r => r.fileType.includes("video") || r.fileType.includes("youtube"))} />
+                  </TabsContent>
+                  <TabsContent value="audio" className="m-0">
+                    <ResourceList items={filteredResources.filter(r => r.fileType.includes("audio"))} />
+                  </TabsContent>
+                  <TabsContent value="docs" className="m-0">
+                    <ResourceList items={filteredResources.filter(r => !r.fileType.includes("video") && !r.fileType.includes("audio") && !r.fileType.includes("youtube"))} />
+                  </TabsContent>
+                </ScrollArea>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="messages" className="pt-4">
