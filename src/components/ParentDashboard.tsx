@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -47,11 +46,11 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [bedtimeStory, setBedtimeStory] = useState<BedtimeStoryOutput | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   
+  const { toast } = useToast();
+
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
-
-  const { toast } = useToast();
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -73,14 +72,19 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
           skills: childData?.skills
         });
         setInsights(res);
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
+        toast({
+          variant: "destructive",
+          title: "AI Insights Unavailable",
+          description: error.message || "We encountered an issue generating your child's learning insights. Please try again later.",
+        });
       } finally {
         setIsLoading(false);
       }
     }
     fetchInsights();
-  }, [childInfo.name, childData?.skills]);
+  }, [childInfo.name, childData?.skills, toast]);
 
   const toggleActivity = (idx: number) => {
     if (completedActivities.includes(idx)) {

@@ -88,7 +88,17 @@ const parentalLearningInsightsFlow = ai.defineFlow(
     outputSchema: ParentalLearningInsightsOutputSchema,
   },
   async (input) => {
-    const {output} = await parentalLearningInsightsPrompt(input);
-    return output!;
+    try {
+      const {output} = await parentalLearningInsightsPrompt(input);
+      if (!output) {
+        throw new Error('AI failed to generate insights output.');
+      }
+      return output;
+    } catch (error: any) {
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        throw new Error('AI service is currently busy (quota exceeded). Please try again in a moment.');
+      }
+      throw error;
+    }
   }
 );
