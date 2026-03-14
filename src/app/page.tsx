@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -25,6 +26,7 @@ export interface Resource {
   fileType: string;
   timestamp: string;
   analysis?: ResourceAnalysis;
+  targetStudentId?: string; // Optional link to a specific student
 }
 
 export default function Home() {
@@ -61,7 +63,7 @@ export default function Home() {
     }
   ]);
 
-  // Shared Roster State for AI Context
+  // Shared Roster State
   const [roster, setRoster] = useState<Student[]>([
     { id: "s1", name: "Leo Johnson", present: true, engagement: "High" },
     { id: "s2", name: "Mia Wong", present: true, engagement: "Medium" },
@@ -69,6 +71,24 @@ export default function Home() {
     { id: "s4", name: "Ava Garcia", present: true, engagement: "High" },
     { id: "s5", name: "Liam Chen", present: true, engagement: "High" },
   ]);
+
+  const handleRegisterChild = (name: string, className: string, mentorName: string) => {
+    // For prototype, we check if student exists by name, or add new
+    setRoster(prev => {
+      const exists = prev.find(s => s.name.toLowerCase() === name.toLowerCase());
+      if (exists) {
+        return prev.map(s => s.id === exists.id ? { ...s, name } : s);
+      }
+      return [...prev, {
+        id: `s${prev.length + 1}`,
+        name,
+        present: true,
+        engagement: "Medium",
+        className,
+        mentorName
+      }];
+    });
+  };
 
   const renderDashboard = () => {
     switch (activeRole) {
@@ -89,6 +109,7 @@ export default function Home() {
             searchQuery={searchQuery} 
             activeTab={activeTab} 
             resources={resources}
+            onRegisterChild={handleRegisterChild}
           />
         );
       case "admin":

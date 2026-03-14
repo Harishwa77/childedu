@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { DashboardTab, Resource } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
@@ -22,6 +26,9 @@ export interface Student {
   name: string;
   present: boolean;
   engagement: "High" | "Medium" | "Low";
+  className?: string;
+  mentorName?: string;
+  lastActivity?: string;
 }
 
 interface TeacherDashboardProps {
@@ -41,6 +48,10 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
   const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
   const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
+  
+  // Manual Activity State
+  const [manualEntryStudent, setManualEntryStudent] = useState<Student | null>(null);
+  const [manualActivityText, setManualActivityText] = useState("");
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -59,6 +70,31 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
   const handleNewProcessed = (data: any) => {
     setResources(prev => [data, ...prev]);
     setSelectedResource(data);
+  };
+
+  const handleSaveManualActivity = () => {
+    if (!manualEntryStudent || !manualActivityText.trim()) return;
+
+    const newResource: Resource = {
+      id: Math.random().toString(36).substring(2, 11),
+      fileName: `Manual: ${manualEntryStudent.name}`,
+      summary: manualActivityText,
+      keyActivities: ["Manual Observation"],
+      fileType: "text/plain",
+      timestamp: new Date().toISOString(),
+      targetStudentId: manualEntryStudent.id
+    };
+
+    setResources(prev => [newResource, ...prev]);
+    setRoster(prev => prev.map(s => s.id === manualEntryStudent.id ? { ...s, lastActivity: manualActivityText } : s));
+    
+    setManualEntryStudent(null);
+    setManualActivityText("");
+    
+    toast({
+      title: "Activity Logged",
+      description: `Manual activity entry saved for ${manualEntryStudent.name}.`
+    });
   };
 
   const handleGenerateLessonPlan = async () => {
@@ -118,7 +154,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-              <p className="text-muted-foreground font-body">Managing 24 students in Preschool Class B</p>
+              <p className="text-muted-foreground font-body">Managing {roster.length} students in Preschool Class B</p>
             </div>
             <div className="flex gap-2">
               <UploadModal onProcessed={handleNewProcessed} />
@@ -245,7 +281,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 <Users className="w-6 h-6 text-primary" />
                 <h3 className="text-xl font-headline font-bold">Classroom Roster</h3>
               </div>
-              <Badge variant="outline" className="font-body">Updated via AI Summary</Badge>
+              <Badge variant="outline" className="font-body">Synced with Parent Portal</Badge>
             </div>
             
             <Card className="border-none shadow-sm overflow-hidden">
@@ -253,24 +289,38 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead className="font-headline">Student Name</TableHead>
-                    <TableHead className="font-headline">Status</TableHead>
-                    <TableHead className="font-headline">AI Engagement</TableHead>
+                    <TableHead className="font-headline">Actions</TableHead>
+                    <TableHead className="font-headline">Engagement</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {roster.map((student) => (
                     <TableRow key={student.id} className="group hover:bg-accent/5">
-                      <TableCell className="font-medium font-body">{student.name}</TableCell>
+                      <TableCell className="font-medium font-body">
+                        <div>
+                          <p>{student.name}</p>
+                          {student.className && <p className="text-[10px] text-muted-foreground">{student.className}</p>}
+                        </div>
+                      </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => toggleAttendance(student.id)}
-                          className={student.present ? "text-emerald-600 hover:text-emerald-700" : "text-red-500 hover:text-red-600"}
-                        >
-                          {student.present ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
-                          {student.present ? "Present" : "Absent"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => toggleAttendance(student.id)}
+                            className={student.present ? "text-emerald-600 p-1" : "text-red-500 p-1"}
+                          >
+                            {student.present ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setManualEntryStudent(student)}
+                            className="h-7 text-[10px] gap-1 px-2"
+                          >
+                            <PlusCircle className="w-3 h-3" /> Entry
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell>{getEngagementBadge(student.engagement)}</TableCell>
                     </TableRow>
@@ -303,6 +353,35 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
           </div>
         )}
       </div>
+
+      {/* Manual Activity Entry Dialog */}
+      <Dialog open={!!manualEntryStudent} onOpenChange={(open) => !open && setManualEntryStudent(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl">Manual Activity Entry</DialogTitle>
+            <DialogDescription>
+              Log an observation or activity directly for <strong>{manualEntryStudent?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="activity">Observation / Activity Note</Label>
+              <Textarea 
+                id="activity" 
+                placeholder="Describe what the student did today..."
+                value={manualActivityText}
+                onChange={(e) => setManualActivityText(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveManualActivity} className="gap-2" disabled={!manualActivityText.trim()}>
+              <Save className="w-4 h-4" /> Log Activity
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Sheet open={!!selectedResource} onOpenChange={(open) => {
         if (!open) {

@@ -23,6 +23,7 @@ interface ParentDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
   resources: Resource[];
+  onRegisterChild: (name: string, className: string, mentorName: string) => void;
 }
 
 interface ChildInfo {
@@ -31,7 +32,7 @@ interface ChildInfo {
   mentorName: string;
 }
 
-export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDashboardProps) {
+export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterChild }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -62,6 +63,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
 
   useEffect(() => {
     async function fetchInsights() {
+      setIsLoading(true);
       try {
         const res = await generateParentalLearningInsights({
           childName: childInfo.name,
@@ -85,7 +87,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
       setCompletedActivities(prev => [...prev, idx]);
       toast({
         title: "Activity Completed! 🎉",
-        description: "Great job supporting Leo's learning journey at home.",
+        description: `Great job supporting ${childInfo.name}'s learning journey at home.`,
       });
     }
   };
@@ -118,10 +120,11 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
 
   const handleSaveRegistration = () => {
     setChildInfo(tempChildInfo);
+    onRegisterChild(tempChildInfo.name, tempChildInfo.className, tempChildInfo.mentorName);
     setIsRegDialogOpen(false);
     toast({
       title: "Profile Updated",
-      description: "Student registration details have been saved."
+      description: "Student registration details have been saved and shared with the teacher."
     });
   };
 
@@ -161,7 +164,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Register Student Details</DialogTitle>
               <DialogDescription>
-                Update your child's information for personalized insights.
+                Update your child's information for personalized insights. This will appear in the teacher dashboard.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -252,7 +255,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
                     <Activity className="w-8 h-8 text-emerald-600" />
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold font-headline">{connectionScore}%</p>
+                    <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
                     <p className="text-xs text-muted-foreground font-body">Activity Alignment</p>
                   </div>
                 </div>
@@ -405,7 +408,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
                   </div>
                   <div>
                     <SheetTitle>{selectedResource.fileName}</SheetTitle>
-                    <SheetDescription>Shared by Teacher Clara</SheetDescription>
+                    <SheetDescription>Shared by Teacher {childInfo.mentorName}</SheetDescription>
                   </div>
                 </div>
               </SheetHeader>
@@ -430,4 +433,3 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
     </div>
   );
 }
-
