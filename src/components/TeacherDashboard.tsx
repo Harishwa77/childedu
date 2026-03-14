@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { TranslationSelector } from "./TranslationSelector";
+import { cn } from "@/lib/utils";
 
 export interface Student {
   id: string;
