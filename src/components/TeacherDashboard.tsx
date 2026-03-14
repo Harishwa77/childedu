@@ -227,7 +227,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                                {res.aiContent.targetAge}
                              </Badge>
                              <Badge variant="secondary" className="h-4 text-[8px] bg-emerald-50 text-emerald-700 border-none">
-                               {res.aiContent.skillsMapped.length} Skills
+                               {res.aiContent.skillsMapped?.length || 0} Skills
                              </Badge>
                            </div>
                          )}
@@ -320,7 +320,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                           <div>
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Curriculum Objectives</p>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              {selectedResource.aiContent?.curriculumObjectives.map((obj, i) => (
+                              {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
                                 <Badge key={i} variant="outline" className="text-[10px] bg-white">{obj}</Badge>
                               ))}
                             </div>
@@ -332,7 +332,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                           <div>
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Skills Mapped</p>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              {selectedResource.aiContent?.skillsMapped.map((skill, i) => (
+                              {selectedResource.aiContent?.skillsMapped?.map((skill, i) => (
                                 <Badge key={i} className="bg-emerald-50 text-emerald-700 border-none text-[10px]">{skill}</Badge>
                               ))}
                             </div>
@@ -351,7 +351,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                     <div className="space-y-4">
                       <h4 className="font-headline font-bold text-lg">Key Concepts</h4>
                       <div className="flex flex-wrap gap-2">
-                        {selectedResource.aiContent?.keyConcepts.map((concept, i) => (
+                        {selectedResource.aiContent?.keyConcepts?.map((concept, i) => (
                           <Badge key={i} variant="secondary" className="px-3 py-1 bg-primary/5 text-primary border-none">{concept}</Badge>
                         ))}
                       </div>
@@ -360,7 +360,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                     <div className="space-y-4">
                       <h4 className="font-headline font-bold text-lg">Interactive Flashcards</h4>
                       <div className="grid gap-4">
-                        {selectedResource.aiContent?.flashcards.map((card, i) => (
+                        {selectedResource.aiContent?.flashcards?.map((card, i) => (
                           <Card key={i} className="p-4 bg-muted/20 border-none hover:bg-muted/40 transition-colors cursor-pointer group">
                              <p className="text-xs font-bold text-primary mb-1">Q: {card.question}</p>
                              <p className="text-sm font-body opacity-0 group-hover:opacity-100 transition-opacity">A: {card.answer}</p>

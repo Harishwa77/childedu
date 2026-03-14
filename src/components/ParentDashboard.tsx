@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Student } from "./TeacherDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -204,7 +205,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 <div className="flex-1 overflow-hidden">
                   <p className="font-bold truncate text-sm">{res.fileName}</p>
                   <div className="flex gap-1 mt-1">
-                    {res.aiContent?.skillsMapped.slice(0, 2).map((s, i) => (
+                    {res.aiContent?.skillsMapped?.slice(0, 2).map((s, i) => (
                       <Badge key={i} className="text-[8px] h-3 bg-muted border-none">{s}</Badge>
                     ))}
                   </div>
@@ -259,7 +260,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <Card className="border-none shadow-sm bg-accent/5">
                       <CardHeader><CardTitle className="text-lg font-headline">Curriculum Standards</CardTitle></CardHeader>
                       <CardContent className="space-y-2">
-                        {selectedResource.aiContent?.curriculumObjectives.map((obj, i) => (
+                        {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
                           <div key={i} className="p-3 bg-white rounded-xl border border-accent/10 text-sm font-body">{obj}</div>
                         ))}
                       </CardContent>
@@ -267,7 +268,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <Card className="border-none shadow-sm bg-emerald-50">
                       <CardHeader><CardTitle className="text-lg font-headline">Skill Nodes</CardTitle></CardHeader>
                       <CardContent className="flex flex-wrap gap-2">
-                        {selectedResource.aiContent?.skillsMapped.map((skill, i) => (
+                        {selectedResource.aiContent?.skillsMapped?.map((skill, i) => (
                           <Badge key={i} className="bg-emerald-600 text-white border-none px-4 py-2 text-sm">{skill}</Badge>
                         ))}
                       </CardContent>

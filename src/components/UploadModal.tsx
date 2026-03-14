@@ -92,6 +92,9 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
             aiContent: {
               summary: result.parentSummary,
               keyConcepts: [result.lessonPlan.title],
+              curriculumObjectives: result.lessonPlan.objectives,
+              targetAge: "3-5 Years",
+              skillsMapped: [],
               flashcards: result.lessonPlan.objectives.map(obj => ({ question: "Learning Objective", answer: obj })),
               quiz: [],
               activitySuggestions: result.lessonPlan.steps,
@@ -168,6 +171,9 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
               aiContent: {
                 summary: result.summary,
                 keyConcepts: result.keyConcepts,
+                curriculumObjectives: result.curriculumObjectives,
+                targetAge: result.targetAge,
+                skillsMapped: result.skillsMapped,
                 flashcards: result.flashcards,
                 quiz: result.quiz,
                 activitySuggestions: result.activitySuggestions,
