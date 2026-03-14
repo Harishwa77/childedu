@@ -12,3 +12,4 @@ import '@/ai/flows/generate-lesson-plan.ts';
 import '@/ai/flows/process-educational-content-pipeline.ts';
 import '@/ai/flows/voice-to-lesson-flow.ts';
 import '@/ai/flows/generate-bedtime-story.ts';
+import '@/ai/flows/generate-personalized-study-plan.ts';

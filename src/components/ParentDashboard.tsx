@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { generateBedtimeStory, BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
+import { generatePersonalizedStudyPlan, PersonalizedStudyPlanOutput } from "@/ai/flows/generate-personalized-study-plan";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardTab, Resource, ChildRegistrationInfo, UserMessage } from "@/app/page";
@@ -25,6 +25,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { TranslationSelector } from "./TranslationSelector";
 import { Textarea } from "@/components/ui/textarea";
+
+interface StudyInteraction {
+  resourceName: string;
+  type: 'view' | 'quiz_complete' | 'flashcard_flip';
+  performance?: number;
+  timestamp: string;
+}
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -52,6 +59,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   
   const [bedtimeStory, setBedtimeStory] = useState<BedtimeStoryOutput | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+
+  const [studyHistory, setStudyHistory] = useState<StudyInteraction[]>([]);
+  const [studyPlan, setStudyPlan] = useState<PersonalizedStudyPlanOutput | null>(null);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   
   const { toast } = useToast();
 
@@ -93,6 +104,37 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     }
     fetchInsights();
   }, [childInfo.name, childData?.skills, toast]);
+
+  const trackInteraction = (resourceName: string, type: StudyInteraction['type'], performance?: number) => {
+    const newInteraction: StudyInteraction = {
+      resourceName,
+      type,
+      performance,
+      timestamp: new Date().toISOString(),
+    };
+    setStudyHistory(prev => [newInteraction, ...prev]);
+  };
+
+  const handleGenerateStudyPlan = async () => {
+    if (studyHistory.length < 1) {
+      toast({ title: "More Data Needed", description: "Interact with some resources first so the AI can analyze learning patterns!" });
+      return;
+    }
+    setIsGeneratingPlan(true);
+    try {
+      const plan = await generatePersonalizedStudyPlan({
+        childName: childInfo.name,
+        history: studyHistory,
+        currentSkills: childData?.skills
+      });
+      setStudyPlan(plan);
+      toast({ title: "Adaptive Plan Ready", description: "We've created a study path based on your child's interests." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Generation Failed", description: "The AI analyst is busy. Try again in a minute." });
+    } finally {
+      setIsGeneratingPlan(false);
+    }
+  };
 
   const toggleActivity = (idx: number) => {
     if (completedActivities.includes(idx)) {
@@ -288,111 +330,187 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         </div>
       </div>
 
-      {activeTab === "dashboard" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-none shadow-lg overflow-hidden flex flex-col">
-            <CardHeader className="bg-primary text-white p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <CardTitle className="font-headline text-2xl flex items-center gap-2"><Sparkles className="w-6 h-6" /> Skill Progress</CardTitle>
-                  <CardDescription className="text-white/80 font-body">Current developmental proficiency</CardDescription>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-12">
+          <TabsTrigger value="overview" className="gap-2">Overview</TabsTrigger>
+          <TabsTrigger value="study-plan" className="gap-2">Adaptive Study Plan</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-none shadow-lg overflow-hidden flex flex-col">
+              <CardHeader className="bg-primary text-white p-6">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="font-headline text-2xl flex items-center gap-2"><Sparkles className="w-6 h-6" /> Skill Progress</CardTitle>
+                    <CardDescription className="text-white/80 font-body">Current developmental proficiency</CardDescription>
+                  </div>
+                  <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
+                    {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
-                  {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+              </CardHeader>
+              <CardContent className="p-6 space-y-6 flex-1">
+                {isLoading ? (
+                  <div className="space-y-6">
+                    {[1, 2, 3, 4].map(i => <div key={i} className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-2 w-full" /></div>)}
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {[
+                      { label: "Language Skills", val: childData?.skills?.language || 0, color: "bg-blue-500" },
+                      { label: "Numbers & Logic", val: childData?.skills?.numeracy || 0, color: "bg-emerald-500" },
+                      { label: "Social Interaction", val: childData?.skills?.social || 0, color: "bg-orange-500" },
+                      { label: "Motor & Creativity", val: childData?.skills?.motor || 0, color: "bg-purple-500" },
+                    ].map((skill, i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="flex justify-between items-center text-sm font-body">
+                          <span className="font-semibold text-muted-foreground">{skill.label}</span>
+                          <span className="font-bold text-foreground">{skill.val}%</span>
+                        </div>
+                        <Progress value={skill.val} className="h-1.5" />
+                      </div>
+                    ))}
+                    <Separator />
+                    <p className="text-sm font-body italic text-muted-foreground">"{insights?.learningSummary}"</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <Card className="hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                     <div className="p-4 bg-emerald-50 rounded-2xl"><Activity className="w-8 h-8 text-emerald-600" /></div>
+                     <div className="text-right">
+                       <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
+                       <p className="text-xs text-muted-foreground font-body">Home-School Alignment</p>
+                     </div>
+                  </div>
+                  <Progress value={connectionScore} className="h-2" />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-primary/5 border-primary/10 overflow-hidden relative">
+                <div className="absolute top-2 right-2 opacity-10">
+                  <Lightbulb className="w-20 h-20 text-primary" />
+                </div>
+                <CardHeader>
+                  <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
+                    <Zap className="w-5 h-5" /> Today's Suggestion
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="font-body text-sm">
+                  {insights?.homeActivitySuggestions && insights.homeActivitySuggestions.length > 0 ? (
+                    <div className="p-4 bg-white rounded-xl shadow-sm border border-primary/10 flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                      <p className="leading-relaxed">{insights.homeActivitySuggestions[0]}</p>
+                    </div>
+                  ) : <Skeleton className="h-10 w-full" />}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+              <Layers className="w-5 h-5 text-primary" />
+              Mapped Classroom Resources
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredResources.map((res) => (
+                <Card key={res.id} className="hover:border-primary cursor-pointer transition-all group" onClick={() => { setSelectedResource(res); setBedtimeStory(null); trackInteraction(res.fileName, 'view'); }}>
+                  <CardContent className="p-4 flex gap-4 items-center">
+                    <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="font-bold truncate text-sm">{res.fileName}</p>
+                      <div className="flex gap-1 mt-1">
+                        {res.aiContent?.skillsMapped?.slice(0, 2).map((s, i) => (
+                          <Badge key={i} className="text-[8px] h-3 bg-muted border-none">{s}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="study-plan" className="pt-4 space-y-6">
+          <Card className="border-none shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary to-accent text-white">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-2xl font-headline flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> Personalized AI Study Plan</CardTitle>
+                  <CardDescription className="text-white/80">Adaptive learning path based on {childInfo.name}'s interactions.</CardDescription>
+                </div>
+                <Button variant="secondary" onClick={handleGenerateStudyPlan} disabled={isGeneratingPlan} className="gap-2">
+                  {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                  Generate Plan
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-6 space-y-6 flex-1">
-              {isLoading ? (
-                <div className="space-y-6">
-                  {[1, 2, 3, 4].map(i => <div key={i} className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-2 w-full" /></div>)}
+            <CardContent className="p-8">
+              {studyPlan ? (
+                <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-700">
+                  <div className="p-6 bg-muted/30 rounded-2xl border-l-4 border-primary">
+                    <h4 className="font-headline font-bold text-lg mb-2">Cognitive Analysis</h4>
+                    <p className="text-muted-foreground font-body leading-relaxed">{studyPlan.analysis}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> Priority Recommendations</h4>
+                      {studyPlan.recommendedPath.map((rec, i) => (
+                        <Card key={i} className="border-accent/10">
+                          <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between">
+                            <CardTitle className="text-sm font-bold">{rec.topic}</CardTitle>
+                            <Badge className={cn("text-[10px]", rec.priority === 'High' ? 'bg-red-500' : 'bg-blue-500')}>{rec.priority} Priority</Badge>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-2">
+                            <p className="text-xs text-muted-foreground font-body">{rec.reason}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500" /> Weekly Adaptive Schedule</h4>
+                      <div className="space-y-3">
+                        {studyPlan.weeklySchedule.map((day, i) => (
+                          <div key={i} className="flex gap-4 items-start p-3 bg-white rounded-xl border shadow-sm">
+                            <div className="bg-primary/10 text-primary font-bold px-3 py-1 rounded-lg text-xs min-w-[50px] text-center">{day.day.substring(0, 3)}</div>
+                            <div>
+                              <p className="text-sm font-bold">{day.activity}</p>
+                              <p className="text-[10px] text-muted-foreground italic">Obj: {day.objective}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-5">
-                  {[
-                    { label: "Language Skills", val: childData?.skills?.language || 0, color: "bg-blue-500" },
-                    { label: "Numbers & Logic", val: childData?.skills?.numeracy || 0, color: "bg-emerald-500" },
-                    { label: "Social Interaction", val: childData?.skills?.social || 0, color: "bg-orange-500" },
-                    { label: "Motor & Creativity", val: childData?.skills?.motor || 0, color: "bg-purple-500" },
-                  ].map((skill, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="flex justify-between items-center text-sm font-body">
-                        <span className="font-semibold text-muted-foreground">{skill.label}</span>
-                        <span className="font-bold text-foreground">{skill.val}%</span>
-                      </div>
-                      <Progress value={skill.val} className="h-1.5" />
-                    </div>
-                  ))}
-                  <Separator />
-                  <p className="text-sm font-body italic text-muted-foreground">"{insights?.learningSummary}"</p>
+                <div className="text-center py-16 space-y-4">
+                  <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto">
+                    <History className="w-10 h-10 text-muted-foreground opacity-20" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-headline font-bold">No Adaptive Plan Generated</h4>
+                    <p className="text-muted-foreground max-w-sm mx-auto font-body">Tap "Generate Plan" to have the AI analyze your interaction history and create a tailored learning schedule.</p>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
-
-          <div className="space-y-6">
-            <Card className="hover:shadow-md transition-all">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                   <div className="p-4 bg-emerald-50 rounded-2xl"><Activity className="w-8 h-8 text-emerald-600" /></div>
-                   <div className="text-right">
-                     <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
-                     <p className="text-xs text-muted-foreground font-body">Home-School Alignment</p>
-                   </div>
-                </div>
-                <Progress value={connectionScore} className="h-2" />
-              </CardContent>
-            </Card>
-
-            <Card className="bg-primary/5 border-primary/10 overflow-hidden relative">
-              <div className="absolute top-2 right-2 opacity-10">
-                <Lightbulb className="w-20 h-20 text-primary" />
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
-                  <Zap className="w-5 h-5" /> Today's Suggestion
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="font-body text-sm">
-                {insights?.homeActivitySuggestions && insights.homeActivitySuggestions.length > 0 ? (
-                  <div className="p-4 bg-white rounded-xl shadow-sm border border-primary/10 flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <p className="leading-relaxed">{insights.homeActivitySuggestions[0]}</p>
-                  </div>
-                ) : <Skeleton className="h-10 w-full" />}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-          <Layers className="w-5 h-5 text-primary" />
-          Mapped Classroom Resources
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredResources.map((res) => (
-            <Card key={res.id} className="hover:border-primary cursor-pointer transition-all group" onClick={() => { setSelectedResource(res); setBedtimeStory(null); }}>
-              <CardContent className="p-4 flex gap-4 items-center">
-                <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="font-bold truncate text-sm">{res.fileName}</p>
-                  <div className="flex gap-1 mt-1">
-                    {res.aiContent?.skillsMapped?.slice(0, 2).map((s, i) => (
-                      <Badge key={i} className="text-[8px] h-3 bg-muted border-none">{s}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
         <SheetContent side="bottom" className="h-[80vh] overflow-y-auto bg-white rounded-t-[2rem]">
@@ -489,7 +607,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <p className="text-sm text-muted-foreground font-body">Hover or tap cards to reveal curriculum answers.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedResource.aiContent?.flashcards?.map((card, i) => (
-                        <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center">
+                        <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center" onClick={() => trackInteraction(selectedResource.fileName, 'flashcard_flip')}>
                            <div className="absolute top-0 right-0 p-2 opacity-10"><BookOpen className="w-8 h-8" /></div>
                            <p className="text-xs font-bold text-primary mb-2 uppercase tracking-widest">Question</p>
                            <p className="text-sm font-bold leading-tight group-hover:hidden">{card.question}</p>
@@ -519,7 +637,9 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                                   variant="outline" 
                                   className="justify-start font-body h-auto py-3 px-4 text-left whitespace-normal hover:bg-primary/5 hover:border-primary/50"
                                   onClick={() => {
-                                    if (opt === q.correctAnswer) {
+                                    const isCorrect = opt === q.correctAnswer;
+                                    trackInteraction(selectedResource.fileName, 'quiz_complete', isCorrect ? 100 : 0);
+                                    if (isCorrect) {
                                       toast({ title: "Correct! 🌟", description: "That's exactly right." });
                                     } else {
                                       toast({ variant: "destructive", title: "Try again", description: "Not quite, but keep exploring!" });
@@ -564,4 +684,25 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       </Sheet>
     </div>
   );
+}
+
+function History(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  )
 }
