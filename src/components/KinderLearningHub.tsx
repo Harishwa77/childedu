@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Volume2, Loader2, BookOpen, Hash, BrainCircuit, Star, Cloud, Sun } from "lucide-react";
+import { Sparkles, Volume2, Loader2, BookOpen, Hash, BrainCircuit, Star, Cloud, Sun, Gamepad2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
+import { LearningGameGenerator } from "./LearningGameGenerator";
 import { cn } from "@/lib/utils";
 
 const numbers = [
@@ -79,17 +80,20 @@ export function KinderLearningHub() {
           <Star className="w-10 h-10 text-orange-400 fill-orange-400 animate-pulse" />
         </h2>
         <p className="text-muted-foreground font-body text-2xl max-w-2xl mx-auto leading-relaxed">
-          Welcome to your interactive discovery zone! Tap a card to hear its magical sound.
+          Welcome to your interactive discovery zone! Tap a card to hear sounds, or use the Magic Game Maker!
         </p>
       </div>
 
       <Tabs defaultValue="alphabets" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-16 bg-white border-4 border-primary/20 rounded-full p-2 shadow-lg">
-          <TabsTrigger value="alphabets" className="gap-3 font-headline text-2xl rounded-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+        <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto h-16 bg-white border-4 border-primary/20 rounded-full p-2 shadow-lg">
+          <TabsTrigger value="alphabets" className="gap-3 font-headline text-xl rounded-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
             <BookOpen className="w-6 h-6" /> ABCs
           </TabsTrigger>
-          <TabsTrigger value="numbers" className="gap-3 font-headline text-2xl rounded-full data-[state=active]:bg-accent data-[state=active]:text-white transition-all">
+          <TabsTrigger value="numbers" className="gap-3 font-headline text-xl rounded-full data-[state=active]:bg-accent data-[state=active]:text-white transition-all">
             <Hash className="w-6 h-6" /> 123s
+          </TabsTrigger>
+          <TabsTrigger value="games" className="gap-3 font-headline text-xl rounded-full data-[state=active]:bg-secondary data-[state=active]:text-white transition-all">
+            <Gamepad2 className="w-6 h-6" /> Magic Games
           </TabsTrigger>
         </TabsList>
 
@@ -152,6 +156,10 @@ export function KinderLearningHub() {
             ))}
           </div>
         </TabsContent>
+
+        <TabsContent value="games" className="pt-12">
+          <LearningGameGenerator />
+        </TabsContent>
       </Tabs>
 
       <Card className="bg-primary/5 border-4 border-primary/20 rounded-[3rem] shadow-inner overflow-hidden relative">
@@ -163,7 +171,7 @@ export function KinderLearningHub() {
           <div className="text-center md:text-left">
             <h3 className="text-3xl font-headline font-bold text-primary mb-2">Did You Know?</h3>
             <p className="text-xl text-muted-foreground font-body leading-relaxed max-w-2xl">
-              Tapping these cards helps your brain connect pictures, sounds, and letters all at once! This makes learning feel like play. Keep exploring!
+              Tapping cards and playing AI games helps your brain connect pictures, sounds, and letters all at once! This makes learning feel like play. Keep exploring!
             </p>
           </div>
         </CardContent>
