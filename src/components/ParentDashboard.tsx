@@ -10,8 +10,9 @@ import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { DashboardTab } from "@/app/page";
 
-export function ParentDashboard({ searchQuery }: { searchQuery: string }) {
+export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -72,122 +73,128 @@ export function ParentDashboard({ searchQuery }: { searchQuery: string }) {
         <Badge variant="outline" className="px-4 py-1 border-primary text-primary font-bold">Preschool B</Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Learning Summary */}
-        <Card className="border-none shadow-lg overflow-hidden flex flex-col">
-          <CardHeader className="bg-primary text-white p-6">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <CardTitle className="font-headline text-2xl flex items-center gap-2">
-                  <Sparkles className="w-6 h-6" /> Classroom Insight
-                </CardTitle>
-                <CardDescription className="text-white/80 font-body">AI-generated summary of Leo's week</CardDescription>
+      {(activeTab === "dashboard" || !activeTab) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Learning Summary */}
+          <Card className="border-none shadow-lg overflow-hidden flex flex-col">
+            <CardHeader className="bg-primary text-white p-6">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                    <Sparkles className="w-6 h-6" /> Classroom Insight
+                  </CardTitle>
+                  <CardDescription className="text-white/80 font-body">AI-generated summary of Leo's week</CardDescription>
+                </div>
+                <Button 
+                  size="icon" 
+                  variant="secondary" 
+                  className="rounded-full bg-white/20 hover:bg-white/30 text-white"
+                  onClick={handleListen}
+                  disabled={isLoading || isSpeaking}
+                >
+                  {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                </Button>
               </div>
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="rounded-full bg-white/20 hover:bg-white/30 text-white"
-                onClick={handleListen}
-                disabled={isLoading || isSpeaking}
-              >
-                {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 flex-1 bg-white">
-            {isLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-[90%]" />
-                <Skeleton className="h-4 w-[95%]" />
-              </div>
-            ) : (
-              <p className="text-lg font-body leading-relaxed text-muted-foreground">
-                "{insights?.learningSummary}"
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="p-6 flex-1 bg-white">
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-[90%]" />
+                  <Skeleton className="h-4 w-[95%]" />
+                </div>
+              ) : (
+                <p className="text-lg font-body leading-relaxed text-muted-foreground">
+                  "{insights?.learningSummary}"
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 gap-6">
-          <Card className="hover:shadow-md transition-all">
-            <CardContent className="p-6 flex items-center gap-6">
-              <div className="p-4 bg-emerald-50 rounded-2xl">
-                <Activity className="w-8 h-8 text-emerald-600" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Participation</p>
-                <p className="text-2xl font-bold font-headline">94% Active</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-all">
-            <CardContent className="p-6 flex items-center gap-6">
-              <div className="p-4 bg-blue-50 rounded-2xl">
-                <Book className="w-8 h-8 text-blue-600" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Milestones</p>
-                <p className="text-2xl font-bold font-headline">3 New Badges</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="hover:shadow-md transition-all">
+              <CardContent className="p-6 flex items-center gap-6">
+                <div className="p-4 bg-emerald-50 rounded-2xl">
+                  <Activity className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Participation</p>
+                  <p className="text-2xl font-bold font-headline">94% Active</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover:shadow-md transition-all">
+              <CardContent className="p-6 flex items-center gap-6">
+                <div className="p-4 bg-blue-50 rounded-2xl">
+                  <Book className="w-8 h-8 text-blue-600" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Milestones</p>
+                  <p className="text-2xl font-bold font-headline">3 New Badges</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Home Activities */}
-      <div className="space-y-4">
-        <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
-          <Home className="w-6 h-6 text-accent" />
-          Home Activity Suggestions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {isLoading ? (
-            [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
-          ) : (
-            insights?.homeActivitySuggestions
-              .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map((act, idx) => (
-              <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent group-hover:text-white transition-colors">
-                      <ChevronRight className="w-4 h-4" />
+      {(activeTab === "dashboard" || activeTab === "insights") && (
+        <div className="space-y-4">
+          <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
+            <Home className="w-6 h-6 text-accent" />
+            Home Activity Suggestions
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {isLoading ? (
+              [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
+            ) : (
+              insights?.homeActivitySuggestions
+                .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((act, idx) => (
+                <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent group-hover:text-white transition-colors">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                      <Badge variant="outline" className="text-[10px] opacity-60">Activity {idx + 1}</Badge>
                     </div>
-                    <Badge variant="outline" className="text-[10px] opacity-60">Activity {idx + 1}</Badge>
-                  </div>
-                  <p className="font-body text-base leading-snug">
-                    {act}
-                  </p>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                    <p className="font-body text-base leading-snug">
+                      {act}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recent Updates */}
-      <Card className="border-accent/10 bg-accent/5">
-        <CardHeader>
-          <CardTitle className="text-xl font-headline">Recent Moments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="min-w-[150px] space-y-2">
-                <div className="aspect-square bg-muted rounded-xl overflow-hidden relative">
-                  <img src={`https://picsum.photos/seed/moment${i}/300/300`} alt="Activity" className="object-cover w-full h-full" />
+      {(activeTab === "dashboard" || activeTab === "resources") && (
+        <Card className="border-accent/10 bg-accent/5">
+          <CardHeader>
+            <CardTitle className="text-xl font-headline">Recent Moments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="min-w-[150px] space-y-2">
+                  <div className="aspect-square bg-muted rounded-xl overflow-hidden relative">
+                    <img src={`https://picsum.photos/seed/moment${i}/300/300`} alt="Activity" className="object-cover w-full h-full" />
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    {i} day{i > 1 ? 's' : ''} ago
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {i} day{i > 1 ? 's' : ''} ago
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

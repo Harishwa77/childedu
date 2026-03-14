@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +10,9 @@ import { UploadModal } from "./UploadModal";
 import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { DashboardTab } from "@/app/page";
 
-export function TeacherDashboard({ searchQuery }: { searchQuery: string }) {
+export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
   const [resources, setResources] = useState<any[]>([
     {
       id: "1",
@@ -58,159 +59,167 @@ export function TeacherDashboard({ searchQuery }: { searchQuery: string }) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-          <p className="text-muted-foreground font-body">Managing 24 students in Preschool Class B</p>
-        </div>
-        <UploadModal onProcessed={handleNewProcessed} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-primary text-white border-none overflow-hidden relative">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-headline flex items-center gap-2">
-              <Star className="w-5 h-5" /> Today's Focus
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold font-headline">Sensory Play & Art</p>
-            <p className="text-sm opacity-80 mt-1 font-body">Integrating color theory with tactile exercises</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-headline flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" /> Curriculum Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-2xl font-bold">85%</p>
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Completed this month</p>
-              </div>
-              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none">On Track</Badge>
+      {(activeTab === "dashboard" || !activeTab) && (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
+              <p className="text-muted-foreground font-body">Managing 24 students in Preschool Class B</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-headline flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" /> Student Engagement
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-2xl font-bold">High</p>
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Across all segments</p>
-              </div>
-              <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">+12% vs last week</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Resources */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-headline font-bold">
-              {searchQuery ? `Search Results for "${searchQuery}"` : "Processed Resources"}
-            </h3>
-            <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
+            <UploadModal onProcessed={handleNewProcessed} />
           </div>
-          <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
-            <div className="space-y-4">
-              {filteredResources.length > 0 ? (
-                filteredResources.map((res) => (
-                  <Card 
-                    key={res.id} 
-                    className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
-                    onClick={() => setSelectedResource(res)}
-                  >
-                    <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                        <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
-                      </div>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-3 space-y-3">
-                      <p className="text-sm text-muted-foreground font-body italic leading-relaxed line-clamp-2">
-                        "{res.summary}"
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {res.keyActivities?.slice(0, 2).map((act: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-[10px] uppercase font-bold text-accent border-accent/20">
-                            {act}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-2">
-                        <Clock className="w-3 h-3" />
-                        {new Date(res.timestamp).toLocaleString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-2">
-                  <div className="p-4 bg-muted rounded-full">
-                    <FileText className="w-8 h-8 text-muted-foreground opacity-20" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-primary text-white border-none overflow-hidden relative">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <Star className="w-5 h-5" /> Today's Focus
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold font-headline">Sensory Play & Art</p>
+                <p className="text-sm opacity-80 mt-1 font-body">Integrating color theory with tactile exercises</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" /> Curriculum Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-2xl font-bold">85%</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Completed this month</p>
                   </div>
-                  <p className="font-headline font-bold text-lg text-muted-foreground">No matching resources</p>
-                  <p className="font-body text-sm text-muted-foreground/60">Try searching for a different keyword or filename.</p>
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none">On Track</Badge>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* AI Recommendations */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-yellow-500" />
-            Suggested Activities
-          </h3>
-          <div className="space-y-4">
-            <Card className="bg-accent/5 border-accent/20">
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
-                      <Badge className="bg-accent">Cognitive</Badge>
-                    </div>
-                    <p className="text-sm font-body text-muted-foreground">Based on recent tactile play observations, introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" /> Student Engagement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-2xl font-bold">High</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Across all segments</p>
                   </div>
-                  
-                  <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-headline font-bold text-primary">Cooperative Block Bridge</h4>
-                      <Badge className="bg-accent">Social</Badge>
-                    </div>
-                    <p className="text-sm font-body text-muted-foreground">Utilize the high engagement in block building to create team goals: building a bridge that spans across two tables.</p>
-                  </div>
-
-                  <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-headline font-bold text-primary">Rhythmic Counting</h4>
-                      <Badge className="bg-accent">Math</Badge>
-                    </div>
-                    <p className="text-sm font-body text-muted-foreground">Combine counting exercises with rhythmic clapping to address the challenges observed in pattern recognition today.</p>
-                  </div>
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">+12% vs last week</Badge>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Processed Resources */}
+        {(activeTab === "dashboard" || activeTab === "resources") && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-headline font-bold">
+                {searchQuery ? `Search Results for "${searchQuery}"` : "Processed Resources"}
+              </h3>
+              <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
+            </div>
+            <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
+              <div className="space-y-4">
+                {filteredResources.length > 0 ? (
+                  filteredResources.map((res) => (
+                    <Card 
+                      key={res.id} 
+                      className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
+                      onClick={() => setSelectedResource(res)}
+                    >
+                      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
+                          <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-3 space-y-3">
+                        <p className="text-sm text-muted-foreground font-body italic leading-relaxed line-clamp-2">
+                          "{res.summary}"
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {res.keyActivities?.slice(0, 2).map((act: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-[10px] uppercase font-bold text-accent border-accent/20">
+                              {act}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-2">
+                          <Clock className="w-3 h-3" />
+                          {new Date(res.timestamp).toLocaleString()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-2">
+                    <div className="p-4 bg-muted rounded-full">
+                      <FileText className="w-8 h-8 text-muted-foreground opacity-20" />
+                    </div>
+                    <p className="font-headline font-bold text-lg text-muted-foreground">No matching resources</p>
+                    <p className="font-body text-sm text-muted-foreground/60">Try searching for a different keyword or filename.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* AI Recommendations */}
+        {(activeTab === "dashboard" || activeTab === "insights") && (
+          <div className="space-y-4">
+            <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-yellow-500" />
+              Suggested Activities
+            </h3>
+            <div className="space-y-4">
+              <Card className="bg-accent/5 border-accent/20">
+                <CardContent className="p-6 space-y-4">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
+                        <Badge className="bg-accent">Cognitive</Badge>
+                      </div>
+                      <p className="text-sm font-body text-muted-foreground">Based on recent tactile play observations, introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
+                    </div>
+                    
+                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-headline font-bold text-primary">Cooperative Block Bridge</h4>
+                        <Badge className="bg-accent">Social</Badge>
+                      </div>
+                      <p className="text-sm font-body text-muted-foreground">Utilize the high engagement in block building to create team goals: building a bridge that spans across two tables.</p>
+                    </div>
+
+                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-headline font-bold text-primary">Rhythmic Counting</h4>
+                        <Badge className="bg-accent">Math</Badge>
+                      </div>
+                      <p className="text-sm font-body text-muted-foreground">Combine counting exercises with rhythmic clapping to address the challenges observed in pattern recognition today.</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Resource Study View - Sheet */}

@@ -2,10 +2,12 @@
 "use client";
 
 import { ReactNode } from "react";
-import { LogOut, Bell, Search, Menu, UserCircle } from "lucide-react";
+import { LogOut, Bell, Search, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
+import { DashboardTab } from "@/app/page";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -13,9 +15,19 @@ interface DashboardLayoutProps {
   onLogout: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  activeTab: DashboardTab;
+  onTabChange: (tab: DashboardTab) => void;
 }
 
-export function DashboardLayout({ children, role, onLogout, searchQuery, onSearchChange }: DashboardLayoutProps) {
+export function DashboardLayout({ 
+  children, 
+  role, 
+  onLogout, 
+  searchQuery, 
+  onSearchChange,
+  activeTab,
+  onTabChange
+}: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -27,9 +39,36 @@ export function DashboardLayout({ children, role, onLogout, searchQuery, onSearc
           </div>
           
           <nav className="hidden md:flex items-center gap-6">
-            <Button variant="ghost" className="text-sm font-medium">Dashboard</Button>
-            <Button variant="ghost" className="text-sm font-medium text-muted-foreground">Resources</Button>
-            <Button variant="ghost" className="text-sm font-medium text-muted-foreground">Insights</Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("dashboard")}
+              className={cn(
+                "text-sm font-medium transition-colors",
+                activeTab === "dashboard" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              Dashboard
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("resources")}
+              className={cn(
+                "text-sm font-medium transition-colors",
+                activeTab === "resources" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              Resources
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => onTabChange("insights")}
+              className={cn(
+                "text-sm font-medium transition-colors",
+                activeTab === "insights" ? "text-primary bg-primary/5" : "text-muted-foreground"
+              )}
+            >
+              Insights
+            </Button>
           </nav>
         </div>
 

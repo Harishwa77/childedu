@@ -9,18 +9,21 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { Toaster } from "@/components/ui/toaster";
 
+export type DashboardTab = "dashboard" | "resources" | "insights";
+
 export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
   const renderDashboard = () => {
     switch (activeRole) {
       case "teacher":
-        return <TeacherDashboard searchQuery={searchQuery} />;
+        return <TeacherDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       case "parent":
-        return <ParentDashboard searchQuery={searchQuery} />;
+        return <ParentDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       case "admin":
-        return <AdminDashboard searchQuery={searchQuery} />;
+        return <AdminDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       default:
         return null;
     }
@@ -41,6 +44,8 @@ export default function Home() {
       onLogout={() => setActiveRole(null)}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
     >
       {renderDashboard()}
       <Toaster />
