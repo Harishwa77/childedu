@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { generateBedtimeStory, BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
 import { generatePersonalizedStudyPlan, PersonalizedStudyPlanOutput } from "@/ai/flows/generate-personalized-study-plan";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardTab, Resource, ChildRegistrationInfo, UserMessage } from "@/app/page";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -23,6 +22,7 @@ import { Student } from "./TeacherDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { TranslationSelector } from "./TranslationSelector";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,14 +83,12 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   ];
 
   const curiosityGraph = useMemo(() => {
-    // Extract concepts from all resources to build a DNA map
     const allConcepts = resources.flatMap(r => r.aiContent?.keyConcepts || []);
     const uniqueConcepts = Array.from(new Set(allConcepts)).slice(0, 8);
     
-    // Create relationships based on shared skills
     const nodes = uniqueConcepts.map((concept, i) => ({
       id: concept,
-      strength: Math.floor(Math.random() * 40) + 60, // Simulated affinity
+      strength: Math.floor(Math.random() * 40) + 60,
       connections: uniqueConcepts.slice(i + 1, i + 3)
     }));
     
@@ -102,15 +100,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   }, [roster, childInfo.name]);
 
   const parentMessages = useMemo(() => messages.filter(m => m.to === "Parent"), [messages]);
-
-  const filteredResources = useMemo(() => {
-    if (!searchQuery.trim()) return resources;
-    const query = searchQuery.toLowerCase();
-    return resources.filter(res => 
-      res.fileName.toLowerCase().includes(query) ||
-      res.summary.toLowerCase().includes(query)
-    );
-  }, [resources, searchQuery]);
 
   useEffect(() => {
     async function fetchInsights() {
@@ -479,16 +468,32 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                  <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
                    <Fingerprint className="w-8 h-8" />
                  </div>
-                 <div>
-                   <CardTitle className="text-3xl font-headline font-bold">{childInfo.name}'s Learning DNA</CardTitle>
-                   <CardDescription className="text-indigo-100">AI Curiosity & Interest Map</CardDescription>
+                 <div className="flex-1">
+                   <div className="flex items-center justify-between">
+                     <div>
+                       <CardTitle className="text-3xl font-headline font-bold">{childInfo.name}'s Learning DNA</CardTitle>
+                       <CardDescription className="text-indigo-100">AI Curiosity & Interest Map</CardDescription>
+                     </div>
+                     <TooltipProvider>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
+                             <Info className="w-5 h-5" />
+                           </Button>
+                         </TooltipTrigger>
+                         <TooltipContent className="max-w-xs p-4 space-y-2">
+                           <p className="font-bold">What is Learning DNA?</p>
+                           <p className="text-xs">It identifies your child's core "Learning Identity" by mapping semantic connections between their favorite topics and developing skills. It explains the "What" and "Why" of their curiosity.</p>
+                         </TooltipContent>
+                       </Tooltip>
+                     </TooltipProvider>
+                   </div>
                  </div>
                </div>
              </CardHeader>
              <CardContent className="p-8">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                  <div className="relative aspect-square max-w-[400px] mx-auto">
-                    {/* Animated Curiosity Graph Visualization */}
                     <div className="absolute inset-0 flex items-center justify-center">
                        <div className="w-24 h-24 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
                        <BrainCircuit className="w-16 h-16 text-white relative z-10 opacity-80" />
@@ -560,27 +565,46 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
           <Card className="border-none shadow-md overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-primary to-accent text-white">
               <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-2xl font-headline flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> Adaptive AI Plan</CardTitle>
-                  <CardDescription className="text-white/80">Personalized path based on {childInfo.name}'s Curiosity Graph.</CardDescription>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl font-headline flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> Adaptive AI Plan</CardTitle>
+                      <CardDescription className="text-white/80">Actionable Roadmap for Parent Engagement.</CardDescription>
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
+                            <Info className="w-5 h-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs p-4 space-y-2">
+                          <p className="font-bold">What is an Adaptive Plan?</p>
+                          <p className="text-xs">This is the "How" and "When." It translates the Learning DNA into a forward-looking weekly schedule with specific tasks to accelerate development through high-interest zones.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-                <Button variant="secondary" onClick={handleGenerateStudyPlan} disabled={isGeneratingPlan} className="gap-2">
-                  {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                  Generate Plan
-                </Button>
+                <div className="ml-4">
+                  <Button variant="secondary" onClick={handleGenerateStudyPlan} disabled={isGeneratingPlan} className="gap-2">
+                    {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                    Generate Path
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-8">
               {studyPlan ? (
                 <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-700">
                   <div className="p-6 bg-muted/30 rounded-2xl border-l-4 border-primary">
-                    <h4 className="font-headline font-bold text-lg mb-2">Cognitive Analysis</h4>
+                    <h4 className="font-headline font-bold text-lg mb-2">Cognitive Roadmap</h4>
                     <p className="text-muted-foreground font-body leading-relaxed">{studyPlan.analysis}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> Focus Nodes</h4>
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> High-Priority Nodes</h4>
                       {studyPlan.recommendedPath.map((rec, i) => (
                         <Card key={i} className="border-accent/10">
                           <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between">
@@ -595,7 +619,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500" /> Weekly Schedule</h4>
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500" /> Weekly Path</h4>
                       <div className="space-y-3">
                         {studyPlan.weeklySchedule.map((day, i) => (
                           <div key={i} className="flex gap-4 items-start p-3 bg-white rounded-xl border shadow-sm">
@@ -616,8 +640,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <Fingerprint className="w-10 h-10 text-muted-foreground opacity-20" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-headline font-bold">No Adaptive Plan Generated</h4>
-                    <p className="text-muted-foreground max-w-sm mx-auto font-body">Tap "Generate Plan" to have the AI analyze {childInfo.name}'s Learning DNA.</p>
+                    <h4 className="text-xl font-headline font-bold">Roadmap Awaiting Data</h4>
+                    <p className="text-muted-foreground max-w-sm mx-auto font-body">Tap "Generate Path" to translate {childInfo.name}'s Curiosity Graph into a weekly actionable roadmap.</p>
                   </div>
                 </div>
               )}
@@ -704,7 +728,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <h4 className="text-xl font-headline font-bold">Suggested Activities</h4>
                     <div className="grid gap-4">
                       {(selectedResource.aiContent?.activitySuggestions || selectedResource.keyActivities).map((act, i) => (
-                        <div key={i} className="flex items-start gap-4 p-4 bg-muted/30 rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => toggleActivity(i)}>
+                        <div key={i} className="flex items-start gap-4 p-4 bg-muted/30 rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setCompletedActivities(prev => prev.includes(i) ? prev.filter(a => a !== i) : [...prev, i])}>
                           <CheckCircle2 className={cn("w-5 h-5 mt-0.5 shrink-0", completedActivities.includes(i) ? "text-emerald-500" : "text-muted-foreground")} />
                           <p className="font-body text-base">{act}</p>
                         </div>
