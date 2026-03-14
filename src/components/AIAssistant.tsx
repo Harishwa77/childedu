@@ -1,13 +1,15 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { MessageSquare, Send, Bot, User, X, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { askEducationalAIAssistant } from "@/ai/flows/ask-educational-ai-assistant-flow";
+import { Resource } from "@/app/page";
+import { Student } from "./TeacherDashboard";
 
 interface Message {
   id: string;
@@ -16,7 +18,12 @@ interface Message {
   timestamp: Date;
 }
 
-export function AIAssistant() {
+interface AIAssistantProps {
+  resources: Resource[];
+  roster: Student[];
+}
+
+export function AIAssistant({ resources, roster }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +31,7 @@ export function AIAssistant() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your EduSense AI assistant. Ask me anything about the curriculum, child progress, or program data.",
+      content: "Hello! I'm your EduSense AI assistant. I'm contextually aware of your classroom data. Ask me about your students, recent activities, or curriculum progress!",
       timestamp: new Date(),
     },
   ]);
@@ -36,6 +43,22 @@ export function AIAssistant() {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Construct a dynamic context based on real data
+  const dynamicContext = useMemo(() => {
+    const resourcesText = resources.map(r => `- Activity: ${r.fileName}. Summary: ${r.summary}`).join("\n");
+    const rosterText = roster.map(s => `- Student: ${s.name}. Attendance: ${s.present ? 'Present' : 'Absent'}. Engagement: ${s.engagement}`).join("\n");
+    
+    return `
+      Classroom Resources:
+      ${resourcesText || "No resources uploaded yet."}
+
+      Student Roster & Engagement:
+      ${rosterText || "No student roster available."}
+
+      The current curriculum focus is on early scientific inquiry, tactile sensory play, and social cooperation.
+    `;
+  }, [resources, roster]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -54,7 +77,7 @@ export function AIAssistant() {
     try {
       const response = await askEducationalAIAssistant({
         question: input,
-        context: "The platform has processed several classroom videos showing high engagement in tactile sensory play. Recent lesson plans focus on color theory and early numeracy. Student progress indicates a 15% increase in cooperative social skills this quarter.",
+        context: dynamicContext,
       });
 
       const assistantMsg: Message = {
@@ -131,7 +154,7 @@ export function AIAssistant() {
       <CardFooter className="p-3 border-t">
         <div className="flex w-full gap-2">
           <Input
-            placeholder="Ask a question..."
+            placeholder="Ask about your students..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}

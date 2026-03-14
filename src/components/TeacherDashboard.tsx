@@ -17,21 +17,23 @@ import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-interface TeacherDashboardProps {
-  searchQuery: string;
-  activeTab?: DashboardTab;
-  resources: Resource[];
-  setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
-}
-
-interface Student {
+export interface Student {
   id: string;
   name: string;
   present: boolean;
   engagement: "High" | "Medium" | "Low";
 }
 
-export function TeacherDashboard({ searchQuery, activeTab, resources, setResources }: TeacherDashboardProps) {
+interface TeacherDashboardProps {
+  searchQuery: string;
+  activeTab?: DashboardTab;
+  resources: Resource[];
+  setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
+  roster: Student[];
+  setRoster: React.Dispatch<React.SetStateAction<Student[]>>;
+}
+
+export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster }: TeacherDashboardProps) {
   const { toast } = useToast();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
@@ -39,15 +41,6 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
   const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
   const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
-
-  // Roster State
-  const [roster, setRoster] = useState<Student[]>([
-    { id: "s1", name: "Leo Johnson", present: true, engagement: "High" },
-    { id: "s2", name: "Mia Wong", present: true, engagement: "Medium" },
-    { id: "s3", name: "Noah Smith", present: false, engagement: "Low" },
-    { id: "s4", name: "Ava Garcia", present: true, engagement: "High" },
-    { id: "s5", name: "Liam Chen", present: true, engagement: "High" },
-  ]);
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -456,4 +449,3 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     </div>
   );
 }
-

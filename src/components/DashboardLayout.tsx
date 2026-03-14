@@ -6,7 +6,8 @@ import { LogOut, Bell, Search, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
-import { DashboardTab } from "@/app/page";
+import { DashboardTab, Resource } from "@/app/page";
+import { Student } from "./TeacherDashboard";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
@@ -17,6 +18,8 @@ interface DashboardLayoutProps {
   onSearchChange: (query: string) => void;
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
+  resources: Resource[];
+  roster: Student[];
 }
 
 export function DashboardLayout({ 
@@ -26,7 +29,9 @@ export function DashboardLayout({
   searchQuery, 
   onSearchChange,
   activeTab,
-  onTabChange
+  onTabChange,
+  resources,
+  roster
 }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -108,7 +113,7 @@ export function DashboardLayout({
         {children}
       </main>
 
-      <AIAssistant />
+      <AIAssistant resources={resources} roster={roster} />
     </div>
   );
 }

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { TeacherDashboard } from "@/components/TeacherDashboard";
+import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
 import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { Toaster } from "@/components/ui/toaster";
@@ -48,6 +48,15 @@ export default function Home() {
     }
   ]);
 
+  // Shared Roster State for AI Context
+  const [roster, setRoster] = useState<Student[]>([
+    { id: "s1", name: "Leo Johnson", present: true, engagement: "High" },
+    { id: "s2", name: "Mia Wong", present: true, engagement: "Medium" },
+    { id: "s3", name: "Noah Smith", present: false, engagement: "Low" },
+    { id: "s4", name: "Ava Garcia", present: true, engagement: "High" },
+    { id: "s5", name: "Liam Chen", present: true, engagement: "High" },
+  ]);
+
   const renderDashboard = () => {
     switch (activeRole) {
       case "teacher":
@@ -57,6 +66,8 @@ export default function Home() {
             activeTab={activeTab} 
             resources={resources}
             setResources={setResources}
+            roster={roster}
+            setRoster={setRoster}
           />
         );
       case "parent":
@@ -91,6 +102,8 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      resources={resources}
+      roster={roster}
     >
       {renderDashboard()}
       <Toaster />
