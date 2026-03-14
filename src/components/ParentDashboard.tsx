@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,21 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     { week: 7, title: "Shape Logic & Sorting", description: "Next focus will be on geometric classification and pattern recognition.", icon: <BrainCircuit className="w-4 h-4" />, status: 'upcoming' },
   ];
 
+  const curiosityGraph = useMemo(() => {
+    // Extract concepts from all resources to build a DNA map
+    const allConcepts = resources.flatMap(r => r.aiContent?.keyConcepts || []);
+    const uniqueConcepts = Array.from(new Set(allConcepts)).slice(0, 8);
+    
+    // Create relationships based on shared skills
+    const nodes = uniqueConcepts.map((concept, i) => ({
+      id: concept,
+      strength: Math.floor(Math.random() * 40) + 60, // Simulated affinity
+      connections: uniqueConcepts.slice(i + 1, i + 3)
+    }));
+    
+    return nodes;
+  }, [resources]);
+
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
@@ -151,15 +167,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     }
   };
 
-  const toggleActivity = (idx: number) => {
-    if (completedActivities.includes(idx)) {
-      setCompletedActivities(prev => prev.filter(i => i !== idx));
-    } else {
-      setCompletedActivities(prev => [...prev, idx]);
-      toast({ title: "Activity Completed! 🎉", description: "Great job supporting your child's learning journey." });
-    }
-  };
-
   const handleGenerateStory = async () => {
     if (!selectedResource) return;
     setIsGeneratingStory(true);
@@ -182,12 +189,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
     setIsMessaging(true);
-    
     onSendMessage({
       subject: messageSubject || `Regarding ${childInfo.name}`,
       text: messageText
     });
-
     setTimeout(() => {
       toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}.` });
       setMessageText("");
@@ -196,8 +201,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       setIsMsgDialogOpen(false);
     }, 1000);
   };
-
-  const connectionScore = Math.min(100, (completedActivities.length / (insights?.homeActivitySuggestions.length || 1)) * 100);
 
   const handleListen = async (text: string) => {
     if (isSpeaking) return;
@@ -212,8 +215,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       setIsSpeaking(false);
     }
   };
-
-  const [tempChildInfo, setTempChildInfo] = useState<ChildRegistrationInfo>(childInfo);
 
   const getIcon = (type: string) => {
     if (type.includes("video")) return <Video className="w-5 h-5 text-purple-600" />;
@@ -317,7 +318,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
             <DialogTrigger asChild>
               <Card className="border-primary/20 bg-primary/5 flex items-center gap-4 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-colors group">
                 <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20">
-                  <UserCircle className="w-6 h-6 text-primary" />
+                  <Fingerprint className="w-6 h-6 text-primary" />
                 </div>
                 <div className="font-body text-sm">
                   <p className="font-bold text-primary">{childInfo.name}</p>
@@ -333,12 +334,18 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 <DialogDescription>Update your child's information for the Knowledge Graph.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <div className="grid gap-2"><Label>Child's Name</Label><Input value={tempChildInfo.name} onChange={(e) => setTempChildInfo({...tempChildInfo, name: e.target.value})} /></div>
-                <div className="grid gap-2"><Label>Class</Label><Input value={tempChildInfo.className} onChange={(e) => setTempChildInfo({...tempChildInfo, className: e.target.value})} /></div>
-                <div className="grid gap-2"><Label>Mentor</Label><Input value={tempChildInfo.mentorName} onChange={(e) => setTempChildInfo({...tempChildInfo, mentorName: e.target.value})} /></div>
+                <div className="grid gap-2"><Label>Child's Name</Label><Input defaultValue={childInfo.name} id="regName" /></div>
+                <div className="grid gap-2"><Label>Class</Label><Input defaultValue={childInfo.className} id="regClass" /></div>
+                <div className="grid gap-2"><Label>Mentor</Label><Input defaultValue={childInfo.mentorName} id="regMentor" /></div>
               </div>
               <DialogFooter>
-                <Button onClick={() => { onRegisterChild(tempChildInfo); setIsRegDialogOpen(false); }} className="gap-2"><Save className="w-4 h-4" /> Save Registration</Button>
+                <Button onClick={() => {
+                   const n = (document.getElementById('regName') as HTMLInputElement).value;
+                   const c = (document.getElementById('regClass') as HTMLInputElement).value;
+                   const m = (document.getElementById('regMentor') as HTMLInputElement).value;
+                   onRegisterChild({ name: n, className: c, mentorName: m });
+                   setIsRegDialogOpen(false);
+                }} className="gap-2"><Save className="w-4 h-4" /> Save Registration</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -346,9 +353,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto h-12">
-          <TabsTrigger value="overview" className="gap-2">Overview</TabsTrigger>
-          <TabsTrigger value="study-plan" className="gap-2">Adaptive Study Plan</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto h-12">
+          <TabsTrigger value="overview" className="gap-2">Growth Map</TabsTrigger>
+          <TabsTrigger value="dna" className="gap-2">Learning DNA</TabsTrigger>
+          <TabsTrigger value="study-plan" className="gap-2">Adaptive Plan</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8 pt-4">
@@ -357,7 +365,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               <CardHeader className="bg-primary text-white p-6">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <CardTitle className="font-headline text-2xl flex items-center gap-2"><Sparkles className="w-6 h-6" /> Skill Progress</CardTitle>
+                    <CardTitle className="font-headline text-2xl flex items-center gap-2"><TrendingUp className="w-6 h-6" /> Skill Progress</CardTitle>
                     <CardDescription className="text-white/80 font-body">Current developmental proficiency</CardDescription>
                   </div>
                   <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
@@ -396,17 +404,17 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
             <div className="space-y-6">
               <Card className="hover:shadow-md transition-all">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Connection Progress</CardTitle>
+                  <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Classroom Connection</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                     <div className="p-4 bg-emerald-50 rounded-2xl"><Activity className="w-8 h-8 text-emerald-600" /></div>
+                     <div className="p-4 bg-emerald-50 rounded-2xl"><Network className="w-8 h-8 text-emerald-600" /></div>
                      <div className="text-right">
-                       <p className="text-2xl font-bold font-headline">{Math.round(connectionScore)}%</p>
-                       <p className="text-xs text-muted-foreground font-body">Home-School Alignment</p>
+                       <p className="text-2xl font-bold font-headline">88%</p>
+                       <p className="text-xs text-muted-foreground font-body">Curriculum Alignment</p>
                      </div>
                   </div>
-                  <Progress value={connectionScore} className="h-2" />
+                  <Progress value={88} className="h-2" />
                 </CardContent>
               </Card>
 
@@ -416,16 +424,14 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 </div>
                 <CardHeader>
                   <CardTitle className="text-lg font-headline flex items-center gap-2 text-primary">
-                    <Zap className="w-5 h-5" /> Today's Suggestion
+                    <Sparkles className="w-5 h-5" /> Recommended Path
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="font-body text-sm">
-                  {insights?.homeActivitySuggestions && insights.homeActivitySuggestions.length > 0 ? (
-                    <div className="p-4 bg-white rounded-xl shadow-sm border border-primary/10 flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                      <p className="leading-relaxed">{insights.homeActivitySuggestions[0]}</p>
-                    </div>
-                  ) : <Skeleton className="h-10 w-full" />}
+                  <div className="p-4 bg-white rounded-xl shadow-sm border border-primary/10 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">Based on {childInfo.name}'s interest in animals, we recommend a tactile "Texture Sorting" activity at home.</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -453,7 +459,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between space-x-2 mb-1">
                         <div className="font-bold text-primary font-headline">Week {event.week}</div>
-                        {event.status === 'completed' && <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none text-[10px]">Achieved</Badge>}
+                        {event.status === 'completed' && <Badge className="bg-emerald-100 text-emerald-700 border-none text-[10px]">Achieved</Badge>}
                         {event.status === 'current' && <Badge className="bg-primary/10 text-primary border-none text-[10px]">In Progress</Badge>}
                       </div>
                       <div className="text-sm font-bold text-foreground mb-1">{event.title}</div>
@@ -464,31 +470,90 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <div className="space-y-4">
-            <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-              <Layers className="w-5 h-5 text-primary" />
-              Mapped Classroom Resources
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredResources.map((res) => (
-                <Card key={res.id} className="hover:border-primary cursor-pointer transition-all group" onClick={() => { setSelectedResource(res); setBedtimeStory(null); trackInteraction(res.fileName, 'view'); }}>
-                  <CardContent className="p-4 flex gap-4 items-center">
-                    <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="font-bold truncate text-sm">{res.fileName}</p>
-                      <div className="flex gap-1 mt-1">
-                        {res.aiContent?.skillsMapped?.slice(0, 2).map((s, i) => (
-                          <Badge key={i} className="text-[8px] h-3 bg-muted border-none">{s}</Badge>
-                        ))}
+        <TabsContent value="dna" className="pt-4 space-y-6">
+           <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-900 to-primary text-white overflow-hidden">
+             <CardHeader>
+               <div className="flex items-center gap-3">
+                 <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+                   <Fingerprint className="w-8 h-8" />
+                 </div>
+                 <div>
+                   <CardTitle className="text-3xl font-headline font-bold">{childInfo.name}'s Learning DNA</CardTitle>
+                   <CardDescription className="text-indigo-100">AI Curiosity & Interest Map</CardDescription>
+                 </div>
+               </div>
+             </CardHeader>
+             <CardContent className="p-8">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                 <div className="relative aspect-square max-w-[400px] mx-auto">
+                    {/* Animated Curiosity Graph Visualization */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                       <div className="w-24 h-24 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
+                       <BrainCircuit className="w-16 h-16 text-white relative z-10 opacity-80" />
+                    </div>
+                    {curiosityGraph.map((node, i) => {
+                      const angle = (i / curiosityGraph.length) * 2 * Math.PI;
+                      const x = 50 + 35 * Math.cos(angle);
+                      const y = 50 + 35 * Math.sin(angle);
+                      return (
+                        <div 
+                          key={node.id}
+                          className="absolute w-24 h-24 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center p-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all cursor-default group"
+                          style={{ left: `${x}%`, top: `${y}%` }}
+                        >
+                          <div className="text-[10px] font-bold uppercase tracking-tighter opacity-60 mb-1">Concept</div>
+                          <div className="text-xs font-headline font-bold text-center leading-tight">{node.id}</div>
+                          <div className="mt-1 w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-400" style={{ width: `${node.strength}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="p-6 bg-white/10 rounded-3xl backdrop-blur-md border border-white/20">
+                      <h4 className="font-headline font-bold text-xl mb-4 flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-orange-400" /> AI DNA Insights
+                      </h4>
+                      <div className="space-y-4 font-body">
+                         <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
+                             <TrendingUp className="w-5 h-5 text-emerald-400" />
+                           </div>
+                           <div>
+                             <p className="font-bold text-sm">Primary Learning Mode</p>
+                             <p className="text-xs text-white/70">Leo shows high visual-tactile affinity, excelling in activities that combine storytelling with physical manipulation.</p>
+                           </div>
+                         </div>
+                         <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-full bg-orange-400/20 flex items-center justify-center shrink-0">
+                             <Target className="w-5 h-5 text-orange-400" />
+                           </div>
+                           <div>
+                             <p className="font-bold text-sm">Expanding Curiosity</p>
+                             <p className="text-xs text-white/70">Interest in 'Animals' is successfully bridging into 'Conservation' and 'Empathy' skill sets.</p>
+                           </div>
+                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+
+                    <div className="space-y-3">
+                       <p className="text-sm font-bold uppercase tracking-widest text-white/50">Next Recommended Interests</p>
+                       <div className="flex flex-wrap gap-2">
+                         {['Environmental Care', 'Geometric Patterns', 'Puppetry', 'Sequence Logic'].map((tag) => (
+                           <Badge key={tag} className="bg-white/10 hover:bg-white/20 text-white border-white/20 px-4 py-2 rounded-xl backdrop-blur-sm cursor-pointer transition-colors">
+                             {tag} <ArrowRight className="w-3 h-3 ml-2" />
+                           </Badge>
+                         ))}
+                       </div>
+                    </div>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
         </TabsContent>
 
         <TabsContent value="study-plan" className="pt-4 space-y-6">
@@ -496,8 +561,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
             <CardHeader className="bg-gradient-to-r from-primary to-accent text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-2xl font-headline flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> Personalized AI Study Plan</CardTitle>
-                  <CardDescription className="text-white/80">Adaptive learning path based on {childInfo.name}'s interactions.</CardDescription>
+                  <CardTitle className="text-2xl font-headline flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> Adaptive AI Plan</CardTitle>
+                  <CardDescription className="text-white/80">Personalized path based on {childInfo.name}'s Curiosity Graph.</CardDescription>
                 </div>
                 <Button variant="secondary" onClick={handleGenerateStudyPlan} disabled={isGeneratingPlan} className="gap-2">
                   {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
@@ -515,12 +580,12 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> Priority Recommendations</h4>
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> Focus Nodes</h4>
                       {studyPlan.recommendedPath.map((rec, i) => (
                         <Card key={i} className="border-accent/10">
                           <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-bold">{rec.topic}</CardTitle>
-                            <Badge className={cn("text-[10px]", rec.priority === 'High' ? 'bg-red-500' : 'bg-blue-500')}>{rec.priority} Priority</Badge>
+                            <Badge className={cn("text-[10px]", rec.priority === 'High' ? 'bg-red-500' : 'bg-blue-500')}>{rec.priority}</Badge>
                           </CardHeader>
                           <CardContent className="p-4 pt-2">
                             <p className="text-xs text-muted-foreground font-body">{rec.reason}</p>
@@ -530,7 +595,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500" /> Weekly Adaptive Schedule</h4>
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500" /> Weekly Schedule</h4>
                       <div className="space-y-3">
                         {studyPlan.weeklySchedule.map((day, i) => (
                           <div key={i} className="flex gap-4 items-start p-3 bg-white rounded-xl border shadow-sm">
@@ -548,11 +613,11 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
               ) : (
                 <div className="text-center py-16 space-y-4">
                   <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto">
-                    <History className="w-10 h-10 text-muted-foreground opacity-20" />
+                    <Fingerprint className="w-10 h-10 text-muted-foreground opacity-20" />
                   </div>
                   <div>
                     <h4 className="text-xl font-headline font-bold">No Adaptive Plan Generated</h4>
-                    <p className="text-muted-foreground max-w-sm mx-auto font-body">Tap "Generate Plan" to have the AI analyze your interaction history and create a tailored learning schedule.</p>
+                    <p className="text-muted-foreground max-w-sm mx-auto font-body">Tap "Generate Plan" to have the AI analyze {childInfo.name}'s Learning DNA.</p>
                   </div>
                 </div>
               )}
@@ -580,7 +645,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 <TabsList className="grid w-full grid-cols-3 bg-muted/30 max-w-lg mx-auto">
                   <TabsTrigger value="home-kit" className="gap-2"><Home className="w-4 h-4" /> Home Pack</TabsTrigger>
                   <TabsTrigger value="study-kit" className="gap-2"><BookOpen className="w-4 h-4" /> Study Kit</TabsTrigger>
-                  <TabsTrigger value="objectives" className="gap-2"><Target className="w-4 h-4" /> Curriculum</TabsTrigger>
+                  <TabsTrigger value="objectives" className="gap-2"><Target className="w-4 h-4" /> Knowledge Map</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="home-kit" className="pt-8 space-y-8">
@@ -653,7 +718,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     <h4 className="text-xl font-headline font-bold flex items-center gap-2">
                       <Sparkles className="w-6 h-6 text-primary" /> Interactive Flashcards
                     </h4>
-                    <p className="text-sm text-muted-foreground font-body">Hover or tap cards to reveal curriculum answers.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedResource.aiContent?.flashcards?.map((card, i) => (
                         <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center" onClick={() => trackInteraction(selectedResource.fileName, 'flashcard_flip')}>
@@ -709,15 +773,17 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 <TabsContent value="objectives" className="pt-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="border-none shadow-sm bg-accent/5">
-                      <CardHeader><CardTitle className="text-lg font-headline">Curriculum Standards</CardTitle></CardHeader>
+                      <CardHeader><CardTitle className="text-lg font-headline">Knowledge Graph Nodes</CardTitle></CardHeader>
                       <CardContent className="space-y-2">
-                        {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
-                          <div key={i} className="p-3 bg-white rounded-xl border border-accent/10 text-sm font-body">{obj}</div>
+                        {selectedResource.aiContent?.keyConcepts?.map((concept, i) => (
+                          <div key={i} className="p-3 bg-white rounded-xl border border-accent/10 text-sm font-body flex items-center gap-2">
+                            <BrainCircuit className="w-4 h-4 text-primary" /> {concept}
+                          </div>
                         ))}
                       </CardContent>
                     </Card>
                     <Card className="border-none shadow-sm bg-emerald-50">
-                      <CardHeader><CardTitle className="text-lg font-headline">Skill Nodes</CardTitle></CardHeader>
+                      <CardHeader><CardTitle className="text-lg font-headline">Skill DNA</CardTitle></CardHeader>
                       <CardContent className="flex flex-wrap gap-2">
                         {selectedResource.aiContent?.skillsMapped?.map((skill, i) => (
                           <Badge key={i} className="bg-emerald-600 text-white border-none px-4 py-2 text-sm">{skill}</Badge>

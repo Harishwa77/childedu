@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file implements a master Genkit flow for the EduSense AI processing pipeline.
@@ -85,7 +86,7 @@ Please analyze the following content:
 TASKS:
 1. SUMMARY: Provide a concise, pedagogical summary focusing on educational value.
 2. KNOWLEDGE GRAPH NODES:
-   - Identify 3-5 fundamental educational KEY CONCEPTS.
+   - Identify 3-5 fundamental educational KEY CONCEPTS (e.g., "Animal Empathy", "Basic Numeracy").
    - Map this to specific CURRICULUM OBJECTIVES (standards).
    - Determine the best TARGET AGE for this content.
    - Select which core SKILLS are practiced (Language, Numeracy, Social, Motor).
@@ -95,7 +96,7 @@ TASKS:
 6. TRANSCRIPT: If this is an audio or video file, provide a FULL, VERBATIM transcript.
 7. MULTILINGUAL: Provide a translated summary and concepts in Tamil and Hindi.
 
-Ensure the final JSON output matches the requested schema perfectly.`,
+Ensure the final JSON output matches the requested schema perfectly. Focus on how concepts connect to build a Learning DNA for the student.`,
 });
 
 const processEducationalContentFlow = ai.defineFlow(

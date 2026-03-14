@@ -211,7 +211,6 @@ export default function Home() {
     }
   };
 
-  // Step 1: User must select who they are
   if (!activeRole) {
     return (
       <main>
@@ -221,7 +220,6 @@ export default function Home() {
     );
   }
 
-  // Step 2: Once a role is selected, they must log in to that specific portal
   if (!isAuthenticated) {
     return (
       <main>
@@ -235,7 +233,6 @@ export default function Home() {
     );
   }
 
-  // Step 3: Authenticated and role selected, show the dashboard
   return (
     <DashboardLayout 
       role={activeRole} 
