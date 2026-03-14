@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
-import { Upload, FileText, Music, Video, Image as ImageIcon, Loader2, CheckCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { Upload, FileText, Music, Video, Image as ImageIcon, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,29 +14,46 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check size client-side (50MB limit)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please upload a file smaller than 50MB."
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setIsUploading(true);
     setProgress(10);
-    setProcessingStatus("Uploading to storage...");
+    setProcessingStatus("Reading file locally...");
 
     try {
-      // Simulate upload delay
-      await new Promise(r => setTimeout(r, 800));
-      setProgress(40);
-      setProcessingStatus("Analyzing content with AI...");
-
-      // Convert file to data URI for Genkit flow
       const reader = new FileReader();
-      reader.readAsDataURL(file);
+      
+      // Track file reading progress
+      reader.onprogress = (data) => {
+        if (data.lengthComputable) {
+          const progressVal = Math.round((data.loaded / data.total) * 30);
+          setProgress(10 + progressVal);
+        }
+      };
+
       reader.onload = async () => {
         const dataUri = reader.result as string;
+        setProgress(40);
+        setProcessingStatus("Sending to AI engine (this may take a moment for large videos)...");
         
         try {
+          // The AI processing happens here
           const result = await summarizeMultimodalContent({
             contentDataUri: dataUri,
             contentType: file.type,
@@ -54,17 +71,30 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
             });
             setIsOpen(false);
             resetState();
-          }, 500);
-        } catch (err) {
+          }, 800);
+        } catch (err: any) {
+          console.error("Upload Error:", err);
           toast({
             variant: "destructive",
-            title: "AI Processing Error",
-            description: "We couldn't process this file. Please try again with a different format."
+            title: "Processing Failed",
+            description: err.message || "The AI encountered an error analyzing your file. Ensure it's a valid media format."
           });
           resetState();
         }
       };
+
+      reader.onerror = () => {
+        toast({
+          variant: "destructive",
+          title: "File Read Error",
+          description: "Could not read the file from your device."
+        });
+        resetState();
+      };
+
+      reader.readAsDataURL(file);
     } catch (error) {
+      console.error("General Error:", error);
       resetState();
     }
   };
@@ -73,56 +103,72 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
     setIsUploading(false);
     setProgress(0);
     setProcessingStatus("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!isUploading) {
+        setIsOpen(open);
+        if (!open) resetState();
+      }
+    }}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Upload className="w-4 h-4" />
-          Upload Resource
+        <Button className="gap-2 h-11 px-6 shadow-md hover:shadow-lg transition-all font-headline text-base">
+          <Upload className="w-5 h-5" />
+          Upload & Analyze
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">Multimodal Upload</DialogTitle>
-          <DialogDescription className="font-body">
-            Share audio recordings, classroom videos, activity photos, or lesson documents.
+          <DialogTitle className="font-headline text-2xl">Educational Resource Upload</DialogTitle>
+          <DialogDescription className="font-body text-base">
+            Upload classroom media (up to 50MB). Our AI will summarize the session and identify key learning activities.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
           {!isUploading ? (
-            <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 hover:bg-accent/5 hover:border-primary transition-all cursor-pointer relative group">
+            <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-12 hover:bg-primary/5 hover:border-primary transition-all cursor-pointer relative group bg-muted/30">
               <input
                 type="file"
+                ref={fileInputRef}
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleFileChange}
                 accept="audio/*,video/*,image/*,.pdf,.docx"
               />
-              <div className="p-4 rounded-full bg-primary/10 mb-4 group-hover:scale-110 transition-transform">
-                <Upload className="w-8 h-8 text-primary" />
+              <div className="p-5 rounded-full bg-primary/10 mb-4 group-hover:scale-110 transition-transform group-hover:bg-primary/20">
+                <Video className="w-10 h-10 text-primary" />
               </div>
-              <p className="text-sm font-medium text-center">Click to upload or drag and drop</p>
-              <p className="text-xs text-muted-foreground mt-2">Support for PDF, DOCX, MP3, MP4, JPEG, PNG</p>
+              <p className="text-base font-bold text-center font-headline">Drop your classroom video here</p>
+              <p className="text-xs text-muted-foreground mt-2 text-center font-body">
+                Max 50MB • MP4, MOV, WAV, PDF, JPEG
+              </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-8 space-y-4">
+            <div className="flex flex-col items-center justify-center p-8 space-y-6">
               {progress < 100 ? (
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <div className="relative">
+                  <Loader2 className="w-16 h-16 text-primary animate-spin opacity-20" />
+                  <div className="absolute inset-0 flex items-center justify-center font-bold text-primary font-headline text-lg">
+                    {progress}%
+                  </div>
+                </div>
               ) : (
-                <CheckCircle className="w-12 h-12 text-emerald-500" />
+                <div className="p-4 bg-emerald-100 rounded-full animate-in zoom-in">
+                  <CheckCircle className="w-12 h-12 text-emerald-600" />
+                </div>
               )}
-              <div className="w-full space-y-2">
-                <Progress value={progress} className="h-2" />
-                <p className="text-center text-sm font-medium text-primary animate-pulse">
+              <div className="w-full space-y-3">
+                <Progress value={progress} className="h-3 rounded-full" />
+                <p className="text-center text-sm font-medium text-primary animate-pulse font-body">
                   {processingStatus}
                 </p>
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4 pt-2 border-t">
             <div className="flex flex-col items-center space-y-1">
               <div className="p-2 bg-blue-50 rounded-lg"><Music className="w-4 h-4 text-blue-600" /></div>
               <span className="text-[10px] uppercase font-bold text-muted-foreground">Voice</span>
