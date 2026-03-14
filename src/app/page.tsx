@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
@@ -9,8 +9,6 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
-import { useCollection, useUser, useFirestore, useMemoFirebase, initiateAnonymousSignIn } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
 
 export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
 
@@ -72,23 +70,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
-  const { user, isUserLoading, auth } = useUser();
-  const db = useFirestore();
-
-  // Sign in anonymously if not logged in
-  useEffect(() => {
-    if (!isUserLoading && !user && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
-
-  // Fetch resources from Firestore - only after user is signed in to avoid permission errors
-  const resourcesQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, "educational_resources"), orderBy("timestamp", "desc"));
-  }, [db, user]);
-
-  const { data: firestoreResources, isLoading: isResourcesLoading } = useCollection<Resource>(resourcesQuery);
+  // Local state for resources instead of Firestore
+  const [resources, setResources] = useState<Resource[]>([]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
@@ -172,12 +155,18 @@ export default function Home() {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
   };
 
+  const handleAddResource = (resource: Resource) => {
+    setResources(prev => [resource, ...prev]);
+  };
+
+  const handleDeleteResource = (id: string) => {
+    setResources(prev => prev.filter(r => r.id !== id));
+  };
+
   const renderDashboard = () => {
     if (activeTab === "learning-hub") {
       return <KinderLearningHub />;
     }
-
-    const currentResources = firestoreResources || [];
 
     switch (activeRole) {
       case "teacher":
@@ -185,12 +174,14 @@ export default function Home() {
           <TeacherDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={currentResources} 
+            resources={resources} 
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
             onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Parent" })}
             onMarkRead={handleMarkAsRead}
+            onAddResource={handleAddResource}
+            onDeleteResource={handleDeleteResource}
           />
         );
       case "parent":
@@ -198,7 +189,7 @@ export default function Home() {
           <ParentDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={currentResources} 
+            resources={resources} 
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
@@ -232,7 +223,7 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      resources={firestoreResources || []}
+      resources={resources}
       roster={roster}
     >
       {renderDashboard()}

@@ -12,10 +12,9 @@ import { processEducationalContent } from "@/ai/flows/process-educational-conten
 import { summarizeYoutubeLink } from "@/ai/flows/summarize-youtube-link";
 import { voiceToLesson } from "@/ai/flows/voice-to-lesson-flow";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser, setDocumentNonBlocking } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { Resource } from "@/app/page";
 
-export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void }) {
+export function UploadModal({ onProcessed }: { onProcessed?: (data: Resource) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -28,29 +27,6 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
-  const db = useFirestore();
-  const { user, isUserLoading } = useUser();
-
-  const persistResource = (resourceData: any) => {
-    if (!db || !user?.uid) {
-      console.warn("Cannot persist resource: Firestore or User UID not available.");
-      return;
-    }
-
-    const resourceId = resourceData.id;
-    const docRef = doc(db, "educational_resources", resourceId);
-    
-    const finalData = {
-      ...resourceData,
-      uploaderId: user.uid,
-      authorizedUids: {
-        [user.uid]: true
-      },
-      createdAt: new Date().toISOString()
-    };
-
-    setDocumentNonBlocking(docRef, finalData, { merge: true });
-  };
 
   const startRecording = async () => {
     try {
@@ -88,7 +64,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   };
 
   const handleVoiceSubmit = async () => {
-    if (!audioBlob || !user) return;
+    if (!audioBlob) return;
 
     setIsUploading(true);
     setProgress(20);
@@ -108,7 +84,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
         setProcessingStatus("Lesson Plan Ready!");
 
         const resourceId = Math.random().toString(36).substring(2, 11);
-        const resourceData = {
+        const resourceData: Resource = {
           id: resourceId,
           fileName: `Voice Plan: ${result.lessonPlan.title}`,
           summary: result.parentSummary,
@@ -132,7 +108,6 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
           }
         };
 
-        persistResource(resourceData);
         onProcessed?.(resourceData);
 
         setTimeout(() => {
@@ -157,7 +132,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
       toast({
@@ -171,7 +146,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
 
     setIsUploading(true);
     setProgress(5);
-    setProcessingStatus("Initiating Autonomous AI Pipeline...");
+    setProcessingStatus("Initiating AI Pipeline...");
 
     try {
       const reader = new FileReader();
@@ -179,7 +154,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
       reader.onload = async () => {
         const dataUri = reader.result as string;
         setProgress(20);
-        setProcessingStatus("Extracting content & transcribing...");
+        setProcessingStatus("Extracting content...");
         
         try {
           const resourceId = Math.random().toString(36).substring(2, 11);
@@ -190,13 +165,10 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
             resourceId: resourceId,
           });
 
-          setProgress(90);
-          setProcessingStatus("Generating Flashcards & Quiz...");
-          
           setProgress(100);
-          setProcessingStatus("Knowledge Base Updated!");
+          setProcessingStatus("Complete!");
           
-          const resourceData = {
+          const resourceData: Resource = {
             id: resourceId,
             ...result,
             aiContent: {
@@ -204,7 +176,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
               keyConcepts: result.keyConcepts,
               curriculumObjectives: result.curriculumObjectives,
               targetAge: result.targetAge,
-              skillsMapped: result.skillsMapped,
+              skillsMapped: result.skillsMapped as any[],
               flashcards: result.flashcards,
               quiz: result.quiz,
               activitySuggestions: result.activitySuggestions,
@@ -215,7 +187,6 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
             timestamp: new Date().toISOString()
           };
 
-          persistResource(resourceData);
           onProcessed?.(resourceData);
 
           setTimeout(() => {
@@ -223,15 +194,14 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
             resetState();
             toast({
               title: "AI Analysis Complete",
-              description: "Flashcards, quizzes, and translations have been saved permanently.",
+              description: "Structured learning content generated successfully.",
             });
           }, 800);
         } catch (err: any) {
-          console.error("Pipeline Error:", err);
           toast({
             variant: "destructive",
-            title: "Autonomous Pipeline Error",
-            description: err.message || "The AI encountered an error processing your content."
+            title: "AI Pipeline Error",
+            description: err.message || "An error occurred processing your content."
           });
           resetState();
         }
@@ -239,14 +209,11 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
 
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error("General Error:", error);
       resetState();
     }
   };
 
   const handleYoutubeSubmit = async () => {
-    if (!user) return;
-
     if (!youtubeUrl.trim() || !youtubeUrl.includes("youtube.com") && !youtubeUrl.includes("youtu.be")) {
       toast({
         variant: "destructive",
@@ -267,15 +234,14 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
       setProcessingStatus("Analysis complete!");
 
       const resourceId = Math.random().toString(36).substring(2, 11);
-      const resourceData = {
+      const resourceData: Resource = {
         id: resourceId,
         ...result,
-        fileName: `YouTube: ${youtubeUrl.substring(0, 30)}...`,
+        fileName: `YouTube Video`,
         fileType: "video/youtube",
         timestamp: new Date().toISOString()
       };
 
-      persistResource(resourceData);
       onProcessed?.(resourceData);
 
       setTimeout(() => {
@@ -311,22 +277,17 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
     }}>
       <DialogTrigger asChild>
         <Button 
-          disabled={!user || isUserLoading}
           className="gap-2 h-11 px-6 shadow-md hover:shadow-lg transition-all font-headline text-base bg-primary"
         >
-          {isUserLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Upload className="w-5 h-5" />
-          )}
-          {isUserLoading ? "Initializing..." : "Add Resource"}
+          <Upload className="w-5 h-5" />
+          Add Resource
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <DialogTitle className="font-headline text-2xl">Autonomous AI Processing</DialogTitle>
+            <DialogTitle className="font-headline text-2xl">AI Resource Hub</DialogTitle>
           </div>
           <DialogDescription className="font-body text-base">
             Upload media or record a voice idea for instant structured lessons.
@@ -386,7 +347,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
                 <div className="p-5 rounded-full bg-primary/10 mb-4 group-hover:scale-110 transition-transform group-hover:bg-primary/20">
                   <Video className="w-10 h-10 text-primary" />
                 </div>
-                <p className="text-base font-bold text-center font-headline">Drop media for Autonomous Extraction</p>
+                <p className="text-base font-bold text-center font-headline">Drop media for AI Extraction</p>
                 <p className="text-xs text-muted-foreground mt-2 text-center font-body">
                   Max 50MB • Video, Audio, or PDF
                 </p>
@@ -398,7 +359,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
                 <div className="relative">
                   <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input 
-                    placeholder="https://www.youtube.com/watch?v=..." 
+                    placeholder="YouTube link..." 
                     className="pl-10"
                     value={youtubeUrl}
                     onChange={(e) => setYoutubeUrl(e.target.value)}

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2, ShieldAlert } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
-import { useFirestore, deleteDocumentNonBlocking } from "@/firebase";
-import { doc } from "firebase/firestore";
 
 export interface Student {
   id: string;
@@ -50,11 +48,23 @@ interface TeacherDashboardProps {
   messages: UserMessage[];
   onSendMessage: (msg: { subject: string; text: string }) => void;
   onMarkRead: (id: string) => void;
+  onAddResource: (resource: Resource) => void;
+  onDeleteResource: (id: string) => void;
 }
 
-export function TeacherDashboard({ searchQuery, activeTab, resources, roster, setRoster, messages, onSendMessage, onMarkRead }: TeacherDashboardProps) {
+export function TeacherDashboard({ 
+  searchQuery, 
+  activeTab, 
+  resources, 
+  roster, 
+  setRoster, 
+  messages, 
+  onSendMessage, 
+  onMarkRead,
+  onAddResource,
+  onDeleteResource
+}: TeacherDashboardProps) {
   const { toast } = useToast();
-  const db = useFirestore();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
@@ -73,8 +83,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, roster, se
     const query = searchQuery.toLowerCase();
     return resources.filter(res => 
       res.fileName.toLowerCase().includes(query) ||
-      res.summary.toLowerCase().includes(query) ||
-      res.keyActivities?.some((act: string) => act.toLowerCase().includes(query))
+      res.summary.toLowerCase().includes(query)
     );
   }, [resources, searchQuery]);
 
@@ -84,15 +93,12 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, roster, se
 
   const handleDeleteResource = (resourceId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!db) return;
-    
-    if (confirm("Are you sure you want to delete this resource permanently?")) {
-      const docRef = doc(db, "educational_resources", resourceId);
-      deleteDocumentNonBlocking(docRef);
+    if (confirm("Are you sure you want to delete this resource?")) {
+      onDeleteResource(resourceId);
       setSelectedResource(null);
       toast({
         title: "Resource Deleted",
-        description: "The resource has been permanently removed from the knowledge base."
+        description: "The resource has been removed from your local session."
       });
     }
   };
@@ -215,7 +221,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, roster, se
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-        <UploadModal />
+        <UploadModal onProcessed={onAddResource} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -251,12 +257,6 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, roster, se
                       </CardContent>
                     </Card>
                   ))}
-                  {filteredResources.length === 0 && (
-                    <div className="py-20 text-center opacity-40">
-                      <FileText className="w-12 h-12 mx-auto mb-2" />
-                      <p>No educational resources found.</p>
-                    </div>
-                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -378,12 +378,12 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, roster, se
                       <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
                       <div className="flex gap-2 mt-1">
                         <Badge className="bg-primary/20 text-primary border-none">{selectedResource.aiContent?.targetAge || "All Ages"}</Badge>
-                        <Badge className="bg-emerald-100 text-emerald-700 border-none">Autonomous Logic</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-none">AI Analyzed</Badge>
                       </div>
                     </div>
                   </div>
                   <Button variant="destructive" size="sm" className="gap-2" onClick={() => handleDeleteResource(selectedResource.id)}>
-                    <Trash2 className="w-4 h-4" /> Delete Permanently
+                    <Trash2 className="w-4 h-4" /> Delete
                   </Button>
                 </div>
               </div>
