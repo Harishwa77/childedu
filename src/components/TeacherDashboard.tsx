@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
-import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle, Trash2, FileVideo, FileAudio, FileText, LayoutGrid } from "lucide-react";
+import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle, Trash2, FileVideo, FileAudio, FileText, LayoutGrid, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -314,6 +315,9 @@ export function TeacherDashboard({
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
+        <div className="flex items-center gap-4">
+           <UploadModal onUpload={onUploadResource} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -397,6 +401,14 @@ export function TeacherDashboard({
                 ))}
               </TableBody>
             </Table>
+          </Card>
+          <Card className="bg-primary/5 border-dashed border-2 border-primary/20 p-6 flex flex-col items-center justify-center text-center space-y-4">
+              <Upload className="w-10 h-10 text-primary opacity-50" />
+              <div>
+                <p className="font-bold text-primary">Quick Action: Add Lesson</p>
+                <p className="text-xs text-muted-foreground">Upload a photo or record a voice idea to generate a plan.</p>
+              </div>
+              <UploadModal onUpload={onUploadResource} />
           </Card>
         </div>
       </div>
