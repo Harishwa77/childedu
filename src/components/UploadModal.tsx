@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Upload, FileText, Music, Video, Image as ImageIcon, Loader2, CheckCircle, Youtube, Link as LinkIcon, Sparkles, Mic, Square, Trash2, Send } from "lucide-react";
+import { useState, useRef } from "react";
+import { Upload, Video, ImageIcon, Loader2, CheckCircle, Youtube, Link as LinkIcon, Sparkles, Mic, Square, Trash2, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -11,8 +12,10 @@ import { processEducationalContent } from "@/ai/flows/process-educational-conten
 import { summarizeYoutubeLink } from "@/ai/flows/summarize-youtube-link";
 import { voiceToLesson } from "@/ai/flows/voice-to-lesson-flow";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useUser, setDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 
-export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void }) {
+export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -23,7 +26,28 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { toast } = useToast();
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const persistResource = (resourceData: any) => {
+    if (!db) return;
+    const resourceId = resourceData.id;
+    const docRef = doc(db, "educational_resources", resourceId);
+    
+    // Add uploader context and authorization map for security rules
+    const finalData = {
+      ...resourceData,
+      uploaderId: user?.uid || "anonymous",
+      authorizedUids: {
+        [user?.uid || "anonymous"]: true
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    setDocumentNonBlocking(docRef, finalData, { merge: true });
+  };
 
   const startRecording = async () => {
     try {
@@ -80,30 +104,35 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
         setProgress(100);
         setProcessingStatus("Lesson Plan Ready!");
 
-        setTimeout(() => {
-          onProcessed({
-            id: Math.random().toString(36).substring(2, 11),
-            fileName: `Voice Plan: ${result.lessonPlan.title}`,
+        const resourceId = Math.random().toString(36).substring(2, 11);
+        const resourceData = {
+          id: resourceId,
+          fileName: `Voice Plan: ${result.lessonPlan.title}`,
+          summary: result.parentSummary,
+          keyActivities: result.lessonPlan.steps,
+          transcript: result.transcript,
+          fileType: "audio/wav",
+          timestamp: new Date().toISOString(),
+          aiContent: {
             summary: result.parentSummary,
-            keyActivities: result.lessonPlan.steps,
-            transcript: result.transcript,
-            fileType: "audio/wav",
-            timestamp: new Date().toISOString(),
-            aiContent: {
-              summary: result.parentSummary,
-              keyConcepts: [result.lessonPlan.title],
-              curriculumObjectives: result.lessonPlan.objectives,
-              targetAge: "3-5 Years",
-              skillsMapped: [],
-              flashcards: result.lessonPlan.objectives.map(obj => ({ question: "Learning Objective", answer: obj })),
-              quiz: [],
-              activitySuggestions: result.lessonPlan.steps,
-              translations: {
-                Tamil: { summary: "", concepts: [] },
-                Hindi: { summary: "", concepts: [] }
-              }
+            keyConcepts: [result.lessonPlan.title],
+            curriculumObjectives: result.lessonPlan.objectives,
+            targetAge: "3-5 Years",
+            skillsMapped: [],
+            flashcards: result.lessonPlan.objectives.map(obj => ({ question: "Learning Objective", answer: obj })),
+            quiz: [],
+            activitySuggestions: result.lessonPlan.steps,
+            translations: {
+              Tamil: { summary: "", concepts: [] },
+              Hindi: { summary: "", concepts: [] }
             }
-          });
+          }
+        };
+
+        persistResource(resourceData);
+        onProcessed?.(resourceData);
+
+        setTimeout(() => {
           setIsOpen(false);
           resetState();
           toast({
@@ -164,31 +193,34 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
           setProgress(100);
           setProcessingStatus("Knowledge Base Updated!");
           
+          const resourceData = {
+            id: resourceId,
+            ...result,
+            aiContent: {
+              summary: result.summary,
+              keyConcepts: result.keyConcepts,
+              curriculumObjectives: result.curriculumObjectives,
+              targetAge: result.targetAge,
+              skillsMapped: result.skillsMapped,
+              flashcards: result.flashcards,
+              quiz: result.quiz,
+              activitySuggestions: result.activitySuggestions,
+              translations: result.translations
+            },
+            fileName: file.name,
+            fileType: file.type,
+            timestamp: new Date().toISOString()
+          };
+
+          persistResource(resourceData);
+          onProcessed?.(resourceData);
+
           setTimeout(() => {
-            onProcessed({
-              id: resourceId,
-              ...result,
-              aiContent: {
-                summary: result.summary,
-                keyConcepts: result.keyConcepts,
-                curriculumObjectives: result.curriculumObjectives,
-                targetAge: result.targetAge,
-                skillsMapped: result.skillsMapped,
-                flashcards: result.flashcards,
-                quiz: result.quiz,
-                activitySuggestions: result.activitySuggestions,
-                translations: result.translations
-              },
-              fileName: file.name,
-              fileType: file.type,
-              timestamp: new Date().toISOString()
-            });
             setIsOpen(false);
             resetState();
-            
             toast({
               title: "AI Analysis Complete",
-              description: "Flashcards, quizzes, and translations have been added to the knowledge base.",
+              description: "Flashcards, quizzes, and translations have been saved permanently.",
             });
           }, 800);
         } catch (err: any) {
@@ -229,14 +261,19 @@ export function UploadModal({ onProcessed }: { onProcessed: (data: any) => void 
       setProgress(100);
       setProcessingStatus("Analysis complete!");
 
+      const resourceId = Math.random().toString(36).substring(2, 11);
+      const resourceData = {
+        id: resourceId,
+        ...result,
+        fileName: `YouTube: ${youtubeUrl.substring(0, 30)}...`,
+        fileType: "video/youtube",
+        timestamp: new Date().toISOString()
+      };
+
+      persistResource(resourceData);
+      onProcessed?.(resourceData);
+
       setTimeout(() => {
-        onProcessed({
-          id: Math.random().toString(36).substring(2, 11),
-          ...result,
-          fileName: `YouTube: ${youtubeUrl.substring(0, 30)}...`,
-          fileType: "video/youtube",
-          timestamp: new Date().toISOString()
-        });
         setIsOpen(false);
         resetState();
       }, 800);

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
@@ -9,6 +9,8 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
+import { useCollection, useUser, useFirestore, useMemoFirebase, initiateAnonymousSignIn } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
 export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
 
@@ -46,6 +48,7 @@ export interface Resource {
   analysis?: ResourceAnalysis;
   targetStudentId?: string;
   aiContent?: AILessonContent;
+  uploaderId?: string;
 }
 
 export interface ChildRegistrationInfo {
@@ -69,6 +72,24 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
+  const { user, isUserLoading, auth } = useUser();
+  const db = useFirestore();
+
+  // Sign in anonymously if not logged in
+  useEffect(() => {
+    if (!isUserLoading && !user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  // Fetch resources from Firestore
+  const resourcesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "educational_resources"), orderBy("timestamp", "desc"));
+  }, [db]);
+
+  const { data: firestoreResources, isLoading: isResourcesLoading } = useCollection<Resource>(resourcesQuery);
+
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
     className: "Preschool Class B",
@@ -78,44 +99,6 @@ export default function Home() {
   const [messages, setMessages] = useState<UserMessage[]>([
     { id: "m1", from: "Mrs. Johnson", to: "Teacher", subject: "Leo's Progress", text: "How did the counting activity go today?", date: "10 mins ago", read: false },
     { id: "m2", from: "Mr. Wong", to: "Teacher", subject: "Mia's Attendance", text: "Mia will be 30 mins late tomorrow for a dentist appointment.", date: "2 hours ago", read: true },
-  ]);
-
-  const [resources, setResources] = useState<Resource[]>([
-    {
-      id: "1",
-      fileName: "Classroom_Play_Session.mp4",
-      summary: "Observation of group dynamic during tactile block play. High engagement in structural building.",
-      keyActivities: ["Social interaction", "Spatial reasoning", "Cooperative play"],
-      transcript: "Teacher: Okay class, let's see how high we can build this tower. Leo, can you pass that blue block? Good job. Let's work together to make sure it doesn't fall.",
-      fileType: "video/mp4",
-      timestamp: "2024-05-15T10:30:00Z",
-      analysis: {
-        activityName: "Block Building Cooperation",
-        studentEngagement: "High",
-        participationPatterns: "Students working in pairs, shared decision making on structural stability.",
-        teachingEffectiveness: "Teacher successfully used open-ended questions to guide the activity.",
-        recommendedImprovement: "Introduce varied block shapes to increase complexity of spatial reasoning."
-      },
-      aiContent: {
-        summary: "An interactive building session focusing on teamwork and structural concepts.",
-        keyConcepts: ["Teamwork", "Balance", "Shape Identification"],
-        curriculumObjectives: ["Standard 2.1: Social Cooperation", "Standard 4.3: Early Engineering Principles"],
-        targetAge: "3-5 Years",
-        skillsMapped: ["Social", "Motor", "Numeracy"],
-        flashcards: [
-          { question: "What builds stability in a tower?", answer: "A wide, strong base." },
-          { question: "How do we work together?", answer: "By sharing blocks and communicating." }
-        ],
-        quiz: [
-          { question: "Which shape is best for the base?", options: ["Square", "Triangle", "Circle", "Line"], correctAnswer: "Square" }
-        ],
-        activitySuggestions: ["Building with cardboard boxes", "Blindfolded building challenge"],
-        translations: {
-          Tamil: { summary: "குழு வேலை மற்றும் கட்டுமானக் கருத்துக்களில் கவனம் செலுத்தும் ஒரு ஊடாடும் அமர்வு.", concepts: ["குழுப்பணி", "சமநிலை", "வடிவ அடையாளம்"] },
-          Hindi: { summary: "टीम वर्क और संरचनात्मक अवधारणाओं पर ध्यान केंद्रित करने वाला एक इंटरैक्टिव सत्र।", concepts: ["टीम वर्क", "संतुलन", "आकार पहचान"] }
-        }
-      }
-    }
   ]);
 
   const [roster, setRoster] = useState<Student[]>([
@@ -194,14 +177,15 @@ export default function Home() {
       return <KinderLearningHub />;
     }
 
+    const currentResources = firestoreResources || [];
+
     switch (activeRole) {
       case "teacher":
         return (
           <TeacherDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
-            setResources={setResources} 
+            resources={currentResources} 
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
@@ -214,7 +198,7 @@ export default function Home() {
           <ParentDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
+            resources={currentResources} 
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
@@ -248,7 +232,7 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      resources={resources}
+      resources={firestoreResources || []}
       roster={roster}
     >
       {renderDashboard()}

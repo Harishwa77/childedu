@@ -2,18 +2,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User, Edit2, Zap, HelpCircle, Target, Layers, MessageCircle, Mail, Send, Reply } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UploadModal } from "./UploadModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { DashboardTab, Resource, UserMessage } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
+import { useFirestore, deleteDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 export interface Student {
   id: string;
@@ -44,7 +45,6 @@ interface TeacherDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
   resources: Resource[];
-  setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
   roster: Student[];
   setRoster: React.Dispatch<React.SetStateAction<Student[]>>;
   messages: UserMessage[];
@@ -52,8 +52,9 @@ interface TeacherDashboardProps {
   onMarkRead: (id: string) => void;
 }
 
-export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster, messages, onSendMessage, onMarkRead }: TeacherDashboardProps) {
+export function TeacherDashboard({ searchQuery, activeTab, resources, roster, setRoster, messages, onSendMessage, onMarkRead }: TeacherDashboardProps) {
   const { toast } = useToast();
+  const db = useFirestore();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
@@ -81,9 +82,19 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     setRoster(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
   };
 
-  const handleNewProcessed = (data: any) => {
-    setResources(prev => [data, ...prev]);
-    setSelectedResource(data);
+  const handleDeleteResource = (resourceId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!db) return;
+    
+    if (confirm("Are you sure you want to delete this resource permanently?")) {
+      const docRef = doc(db, "educational_resources", resourceId);
+      deleteDocumentNonBlocking(docRef);
+      setSelectedResource(null);
+      toast({
+        title: "Resource Deleted",
+        description: "The resource has been permanently removed from the knowledge base."
+      });
+    }
   };
 
   const handleSaveMilestones = () => {
@@ -204,7 +215,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-        <UploadModal onProcessed={handleNewProcessed} />
+        <UploadModal />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -228,13 +239,24 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                              {res.aiContent && <Badge variant="secondary" className="h-4 text-[8px] mt-1">{res.aiContent.targetAge}</Badge>}
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4" />
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDeleteResource(res.id, e)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
                       </CardHeader>
                       <CardContent className="p-4 pt-3">
                         <p className="text-sm text-muted-foreground font-body italic line-clamp-2">"{res.summary}"</p>
                       </CardContent>
                     </Card>
                   ))}
+                  {filteredResources.length === 0 && (
+                    <div className="py-20 text-center opacity-40">
+                      <FileText className="w-12 h-12 mx-auto mb-2" />
+                      <p>No educational resources found.</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -347,17 +369,22 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
           {selectedResource && (
             <div className="flex flex-col h-full">
               <div className="p-6 border-b bg-primary/5">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-white rounded-2xl shadow-sm">
-                    {getIcon(selectedResource.fileType)}
-                  </div>
-                  <div className="flex-1">
-                    <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
-                    <div className="flex gap-2 mt-1">
-                      <Badge className="bg-primary/20 text-primary border-none">{selectedResource.aiContent?.targetAge || "All Ages"}</Badge>
-                      <Badge className="bg-emerald-100 text-emerald-700 border-none">Autonomous Logic</Badge>
+                <div className="flex items-center justify-between mb-4">
+                   <div className="flex items-center gap-3">
+                    <div className="p-3 bg-white rounded-2xl shadow-sm">
+                      {getIcon(selectedResource.fileType)}
+                    </div>
+                    <div>
+                      <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
+                      <div className="flex gap-2 mt-1">
+                        <Badge className="bg-primary/20 text-primary border-none">{selectedResource.aiContent?.targetAge || "All Ages"}</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-none">Autonomous Logic</Badge>
+                      </div>
                     </div>
                   </div>
+                  <Button variant="destructive" size="sm" className="gap-2" onClick={() => handleDeleteResource(selectedResource.id)}>
+                    <Trash2 className="w-4 h-4" /> Delete Permanently
+                  </Button>
                 </div>
               </div>
 
@@ -390,7 +417,7 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                         </div>
                         <Separator />
                         <div className="flex items-start gap-3">
-                          <Activity className="w-5 h-5 text-emerald-500 mt-1" />
+                          <PlusCircle className="w-5 h-5 text-emerald-500 mt-1" />
                           <div className="flex-1">
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Skills Mapped</p>
                             <div className="flex flex-wrap gap-2 mt-1">
