@@ -63,21 +63,64 @@ export default function Home() {
     }
   ]);
 
-  // Shared Roster State
+  // Shared Roster State with Developmental Data
   const [roster, setRoster] = useState<Student[]>([
-    { id: "s1", name: "Leo Johnson", present: true, engagement: "High" },
-    { id: "s2", name: "Mia Wong", present: true, engagement: "Medium" },
-    { id: "s3", name: "Noah Smith", present: false, engagement: "Low" },
-    { id: "s4", name: "Ava Garcia", present: true, engagement: "High" },
-    { id: "s5", name: "Liam Chen", present: true, engagement: "High" },
+    { 
+      id: "s1", 
+      name: "Leo Johnson", 
+      present: true, 
+      engagement: "High",
+      skills: { language: 85, numeracy: 72, social: 90, motor: 78 },
+      history: [
+        { date: "Jan", score: 65 },
+        { date: "Feb", score: 68 },
+        { date: "Mar", score: 75 },
+        { date: "Apr", score: 78 },
+        { date: "May", score: 85 },
+      ]
+    },
+    { 
+      id: "s2", 
+      name: "Mia Wong", 
+      present: true, 
+      engagement: "Medium",
+      skills: { language: 92, numeracy: 65, social: 75, motor: 88 },
+      history: [
+        { date: "Jan", score: 70 },
+        { date: "Feb", score: 72 },
+        { date: "Mar", score: 78 },
+        { date: "Apr", score: 80 },
+        { date: "May", score: 82 },
+      ]
+    },
+    { 
+      id: "s3", 
+      name: "Noah Smith", 
+      present: false, 
+      engagement: "Low",
+      skills: { language: 60, numeracy: 55, social: 65, motor: 70 }
+    },
+    { 
+      id: "s4", 
+      name: "Ava Garcia", 
+      present: true, 
+      engagement: "High",
+      skills: { language: 88, numeracy: 95, social: 82, motor: 75 }
+    },
+    { 
+      id: "s5", 
+      name: "Liam Chen", 
+      present: true, 
+      engagement: "High",
+      skills: { language: 75, numeracy: 80, social: 88, motor: 92 }
+    },
   ]);
 
   const handleRegisterChild = (name: string, className: string, mentorName: string) => {
-    // For prototype, we check if student exists by name, or add new
     setRoster(prev => {
       const exists = prev.find(s => s.name.toLowerCase() === name.toLowerCase());
       if (exists) {
-        return prev.map(s => s.id === exists.id ? { ...s, name } : s);
+        return prev.map(s => s.id === exists.id ? { ...s, name, className, mentorName } : s);
       }
       return [...prev, {
         id: `s${prev.length + 1}`,
@@ -85,7 +128,9 @@ export default function Home() {
         present: true,
         engagement: "Medium",
         className,
-        mentorName
+        mentorName,
+        skills: { language: 50, numeracy: 50, social: 50, motor: 50 },
+        history: [{ date: "May", score: 50 }]
       }];
     });
   };
@@ -109,6 +154,7 @@ export default function Home() {
             searchQuery={searchQuery} 
             activeTab={activeTab} 
             resources={resources}
+            roster={roster}
             onRegisterChild={handleRegisterChild}
           />
         );

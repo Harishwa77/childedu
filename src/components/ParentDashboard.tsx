@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2 } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2, TrendingUp, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Student } from "./TeacherDashboard";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
 
 interface ParentDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
   resources: Resource[];
+  roster: Student[];
   onRegisterChild: (name: string, className: string, mentorName: string) => void;
 }
 
@@ -32,7 +35,7 @@ interface ChildInfo {
   mentorName: string;
 }
 
-export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterChild }: ParentDashboardProps) {
+export function ParentDashboard({ searchQuery, activeTab, resources, roster, onRegisterChild }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -47,6 +50,11 @@ export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterC
     mentorName: "Ms. Clara"
   });
   
+  // Find child in roster for developmental data
+  const childData = useMemo(() => {
+    return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
+  }, [roster, childInfo.name]);
+
   // Temp state for editing
   const [tempChildInfo, setTempChildInfo] = useState<ChildInfo>(childInfo);
 
@@ -311,7 +319,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterC
 
       {/* Home Activities / Insights Tab */}
       {(activeTab === "dashboard" || activeTab === "insights") && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
               <BrainCircuit className="w-6 h-6 text-primary" />
@@ -319,25 +327,26 @@ export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterC
             </h3>
           </div>
 
-          {activeTab === "insights" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
              <Card className="bg-accent/5 border-accent/20">
                 <CardHeader>
                   <CardTitle className="text-lg font-headline flex items-center gap-2">
                     <Target className="w-5 h-5" /> Learning Milestones
                   </CardTitle>
-                  <CardDescription>Progress tracked against early childhood standards</CardDescription>
+                  <CardDescription>Progress tracked across core skills</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {[
-                      { area: "Scientific Inquiry", progress: 85, color: "bg-blue-500" },
-                      { area: "Fine Motor Skills", progress: 70, color: "bg-emerald-500" },
-                      { area: "Emotional Resilience", progress: 90, color: "bg-purple-500" },
+                      { area: "Language Skills", progress: childData?.skills?.language || 0, color: "bg-blue-500" },
+                      { area: "Numeracy Skills", progress: childData?.skills?.numeracy || 0, color: "bg-emerald-500" },
+                      { area: "Social Interaction", progress: childData?.skills?.social || 0, color: "bg-purple-500" },
+                      { area: "Motor Skills", progress: childData?.skills?.motor || 0, color: "bg-orange-500" },
                     ].map(item => (
                       <div key={item.area} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-body font-medium">{item.area}</span>
-                          <span className="text-muted-foreground">{item.progress}% Milestone Reach</span>
+                        <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                          <span className="font-body text-muted-foreground">{item.area}</span>
+                          <span className="text-primary">{item.progress}%</span>
                         </div>
                         <div className="h-2 w-full bg-accent/10 rounded-full overflow-hidden">
                           <div className={`h-full ${item.color}`} style={{ width: `${item.progress}%` }}></div>
@@ -347,7 +356,36 @@ export function ParentDashboard({ searchQuery, activeTab, resources, onRegisterC
                   </div>
                 </CardContent>
              </Card>
-          )}
+
+             <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg font-headline flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" /> Learning Progress Over Time
+                  </CardTitle>
+                  <CardDescription>Developmental score aggregated monthly</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={childData?.history || []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                        <YAxis hide domain={[0, 100]} />
+                        <RechartsTooltip />
+                        <Line 
+                          type="monotone" 
+                          dataKey="score" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={3} 
+                          dot={{ r: 4, fill: "hsl(var(--primary))" }} 
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+             </Card>
+          </div>
 
           <div className="space-y-4">
             <h4 className="text-xl font-headline font-bold flex items-center gap-2">

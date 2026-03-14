@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck, AlertCircle, Activity, PlusCircle, Save, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from "recharts";
+import { Progress } from "@/components/ui/progress";
 
 export interface Student {
   id: string;
@@ -29,6 +31,13 @@ export interface Student {
   className?: string;
   mentorName?: string;
   lastActivity?: string;
+  skills?: {
+    language: number;
+    numeracy: number;
+    social: number;
+    motor: number;
+  };
+  history?: { date: string; score: number }[];
 }
 
 interface TeacherDashboardProps {
@@ -43,13 +52,13 @@ interface TeacherDashboardProps {
 export function TeacherDashboard({ searchQuery, activeTab, resources, setResources, roster, setRoster }: TeacherDashboardProps) {
   const { toast } = useToast();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
   const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
   const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
   
-  // Manual Activity State
   const [manualEntryStudent, setManualEntryStudent] = useState<Student | null>(null);
   const [manualActivityText, setManualActivityText] = useState("");
 
@@ -297,9 +306,19 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                   {roster.map((student) => (
                     <TableRow key={student.id} className="group hover:bg-accent/5">
                       <TableCell className="font-medium font-body">
-                        <div>
-                          <p>{student.name}</p>
-                          {student.className && <p className="text-[10px] text-muted-foreground">{student.className}</p>}
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                            onClick={() => setSelectedStudent(student)}
+                          >
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="cursor-pointer hover:text-primary transition-colors" onClick={() => setSelectedStudent(student)}>
+                              {student.name}
+                            </p>
+                            {student.className && <p className="text-[10px] text-muted-foreground">{student.className}</p>}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -379,6 +398,84 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
             <Button onClick={handleSaveManualActivity} className="gap-2" disabled={!manualActivityText.trim()}>
               <Save className="w-4 h-4" /> Log Activity
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Profile Dialog */}
+      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-4">
+               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
+                 {selectedStudent?.name[0]}
+               </div>
+               <div>
+                 <DialogTitle className="font-headline text-3xl">{selectedStudent?.name}</DialogTitle>
+                 <DialogDescription className="font-body text-base">
+                   {selectedStudent?.className || "General Preschool"} • {selectedStudent?.mentorName || "Ms. Clara"}
+                 </DialogDescription>
+               </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="py-6 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Skill Breakdown */}
+              <div className="space-y-4">
+                <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                  <Star className="w-5 h-5 text-accent" /> Developmental Skills
+                </h4>
+                <div className="space-y-4">
+                  {[
+                    { label: "Language", value: selectedStudent?.skills?.language || 0, color: "bg-blue-500" },
+                    { label: "Numeracy", value: selectedStudent?.skills?.numeracy || 0, color: "bg-emerald-500" },
+                    { label: "Social", value: selectedStudent?.skills?.social || 0, color: "bg-purple-500" },
+                    { label: "Motor", value: selectedStudent?.skills?.motor || 0, color: "bg-orange-500" },
+                  ].map((skill) => (
+                    <div key={skill.label} className="space-y-1">
+                      <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        <span>{skill.label}</span>
+                        <span>{skill.value}%</span>
+                      </div>
+                      <Progress value={skill.value} className="h-1.5" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Learning Progress Chart */}
+              <div className="space-y-4">
+                <h4 className="font-headline font-bold text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" /> Learning Progress
+                </h4>
+                <div className="h-48 w-full bg-muted/20 rounded-xl p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={selectedStudent?.history || []}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                      <XAxis dataKey="date" hide />
+                      <YAxis hide domain={[0, 100]} />
+                      <RechartsTooltip />
+                      <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[10px] text-center text-muted-foreground font-body">Aggregated development score over 5 months</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+              <h4 className="font-bold text-sm mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" /> AI Mentor Note
+              </h4>
+              <p className="text-sm font-body text-muted-foreground italic">
+                "{selectedStudent?.name} is showing exceptional growth in {selectedStudent?.skills && selectedStudent.skills.social > 80 ? 'social dynamics' : 'tactile exploration'}. Recommend introducing more complex group-based problem solving tasks next month."
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedStudent(null)}>Close Profile</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
