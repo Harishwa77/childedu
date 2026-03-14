@@ -19,6 +19,9 @@ export interface ResourceAnalysis {
 export interface AILessonContent {
   summary: string;
   keyConcepts: string[];
+  curriculumObjectives: string[];
+  targetAge: string;
+  skillsMapped: string[];
   flashcards: { question: string; answer: string }[];
   quiz: { question: string; options: string[]; correctAnswer: string }[];
   activitySuggestions: string[];
@@ -38,7 +41,7 @@ export interface Resource {
   timestamp: string;
   analysis?: ResourceAnalysis;
   targetStudentId?: string;
-  aiContent?: AILessonContent; // Link to the autonomous AI generated kit
+  aiContent?: AILessonContent;
 }
 
 export interface ChildRegistrationInfo {
@@ -52,14 +55,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Persist Parent Registration Info
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
     className: "Preschool Class B",
     mentorName: "Ms. Clara"
   });
 
-  // Shared resources state
   const [resources, setResources] = useState<Resource[]>([
     {
       id: "1",
@@ -79,6 +80,9 @@ export default function Home() {
       aiContent: {
         summary: "An interactive building session focusing on teamwork and structural concepts.",
         keyConcepts: ["Teamwork", "Balance", "Shape Identification"],
+        curriculumObjectives: ["Standard 2.1: Social Cooperation", "Standard 4.3: Early Engineering Principles"],
+        targetAge: "3-5 Years",
+        skillsMapped: ["Social", "Motor", "Numeracy"],
         flashcards: [
           { question: "What builds stability in a tower?", answer: "A wide, strong base." },
           { question: "How do we work together?", answer: "By sharing blocks and communicating." }
@@ -92,19 +96,9 @@ export default function Home() {
           Hindi: { summary: "टीम वर्क और संरचनात्मक अवधारणाओं पर ध्यान केंद्रित करने वाला एक इंटरैक्टिव सत्र।", concepts: ["टीम वर्क", "संतुलन", "आकार पहचान"] }
         }
       }
-    },
-    {
-      id: "2",
-      fileName: "Math_Lesson_VoiceNote.wav",
-      summary: "Reflection on early numeracy curriculum. Students showed difficulty with subtraction but excelled in pattern recognition.",
-      keyActivities: ["Pattern sorting", "Counting 1-10", "Reflection"],
-      transcript: "In today's lesson, we covered basic pattern recognition. Most students were able to identify ABAB patterns. We struggled a bit with the introduction of subtraction concepts...",
-      fileType: "audio/wav",
-      timestamp: "2024-05-14T14:45:00Z"
     }
   ]);
 
-  // Shared Roster State
   const [roster, setRoster] = useState<Student[]>([
     { 
       id: "s1", 
@@ -134,27 +128,9 @@ export default function Home() {
         { date: "May", score: 82 },
       ]
     },
-    { 
-      id: "s3", 
-      name: "Noah Smith", 
-      present: false, 
-      engagement: "Low",
-      skills: { language: 60, numeracy: 55, social: 65, motor: 70 }
-    },
-    { 
-      id: "s4", 
-      name: "Ava Garcia", 
-      present: true, 
-      engagement: "High",
-      skills: { language: 88, numeracy: 95, social: 82, motor: 75 }
-    },
-    { 
-      id: "s5", 
-      name: "Liam Chen", 
-      present: true, 
-      engagement: "High",
-      skills: { language: 75, numeracy: 80, social: 88, motor: 92 }
-    },
+    { id: "s3", name: "Noah Smith", present: false, engagement: "Low", skills: { language: 60, numeracy: 55, social: 65, motor: 70 } },
+    { id: "s4", name: "Ava Garcia", present: true, engagement: "High", skills: { language: 88, numeracy: 95, social: 82, motor: 75 } },
+    { id: "s5", name: "Liam Chen", present: true, engagement: "High", skills: { language: 75, numeracy: 80, social: 88, motor: 92 } },
   ]);
 
   const handleRegisterChild = (info: ChildRegistrationInfo) => {
@@ -162,12 +138,7 @@ export default function Home() {
     setRoster(prev => {
       const exists = prev.find(s => s.name.toLowerCase() === info.name.toLowerCase());
       if (exists) {
-        return prev.map(s => s.id === exists.id ? { 
-          ...s, 
-          name: info.name, 
-          className: info.className, 
-          mentorName: info.mentorName 
-        } : s);
+        return prev.map(s => s.id === exists.id ? { ...s, name: info.name, className: info.className, mentorName: info.mentorName } : s);
       }
       return [...prev, {
         id: `s${prev.length + 1}`,
@@ -185,27 +156,9 @@ export default function Home() {
   const renderDashboard = () => {
     switch (activeRole) {
       case "teacher":
-        return (
-          <TeacherDashboard 
-            searchQuery={searchQuery} 
-            activeTab={activeTab} 
-            resources={resources}
-            setResources={setResources}
-            roster={roster}
-            setRoster={setRoster}
-          />
-        );
+        return <TeacherDashboard searchQuery={searchQuery} activeTab={activeTab} resources={resources} setResources={setResources} roster={roster} setRoster={setRoster} />;
       case "parent":
-        return (
-          <ParentDashboard 
-            searchQuery={searchQuery} 
-            activeTab={activeTab} 
-            resources={resources}
-            roster={roster}
-            childInfo={parentSessionInfo}
-            onRegisterChild={handleRegisterChild}
-          />
-        );
+        return <ParentDashboard searchQuery={searchQuery} activeTab={activeTab} resources={resources} roster={roster} childInfo={parentSessionInfo} onRegisterChild={handleRegisterChild} />;
       case "admin":
         return <AdminDashboard searchQuery={searchQuery} activeTab={activeTab} />;
       default:

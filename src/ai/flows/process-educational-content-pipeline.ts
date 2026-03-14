@@ -4,7 +4,7 @@
  *
  * It takes multimodal content (audio, video, docs, images), transcribes it,
  * generates a NoteGPT-style summary, flashcards, quiz questions, 
- * and provides translations for multilingual accessibility.
+ * and maps the content to a knowledge graph (Activity -> Skill -> Objective -> Age).
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,10 +28,13 @@ export type ProcessEducationalContentInput = z.infer<
   typeof ProcessEducationalContentInputSchema
 >;
 
-// Output Schema (NoteGPT-style intelligence)
+// Output Schema (Autonomous Knowledge Graph Extraction)
 const ProcessEducationalContentOutputSchema = z.object({
   summary: z.string().describe('A high-level pedagogical summary of the content.'),
   keyConcepts: z.array(z.string()).describe('Fundamental educational topics identified in the content.'),
+  curriculumObjectives: z.array(z.string()).describe('Specific national or institutional curriculum standards this activity meets.'),
+  targetAge: z.string().describe('The primary age group this resource is best suited for (e.g., "3-5 Years").'),
+  skillsMapped: z.array(z.enum(['Language', 'Numeracy', 'Social', 'Motor'])).describe('The core skill areas practiced.'),
   flashcards: z.array(z.object({
     question: z.string(),
     answer: z.string(),
@@ -72,7 +75,7 @@ const processPrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: { schema: ProcessEducationalContentInputSchema },
   output: { schema: ProcessEducationalContentOutputSchema },
-  prompt: `You are an expert AI Autonomous Intelligence Layer for early childhood education, specialized in transforming raw content into structured knowledge.
+  prompt: `You are an expert AI Autonomous Intelligence Layer for early childhood education, specialized in transforming raw content into a structured Knowledge Graph.
 
 You are processing a file of type: {{{contentType}}}.
 
@@ -80,13 +83,17 @@ Please analyze the following content:
 {{media url=contentDataUri}}
 
 TASKS:
-1. SUMMARY: Provide a concise, pedagogical summary focusing on educational value and teacher/student interactions.
-2. KEY CONCEPTS: Identify 3-5 fundamental educational topics (e.g., "Pattern Recognition", "Social Cooperation").
-3. FLASHCARDS: Generate 5 flashcards (question and answer) that reinforce the key concepts.
-4. QUIZ: Create 3 multiple-choice questions with 4 options each and identify the correct answer.
-5. ACTIVITIES: Suggest 3 classroom or home activities that build upon this content.
-6. TRANSCRIPT: If this is an audio or video file, provide a FULL, VERBATIM transcript of all spoken dialogue.
-7. MULTILINGUAL (CRITICAL): Provide a naturally translated summary and list of key concepts in Tamil and Hindi.
+1. SUMMARY: Provide a concise, pedagogical summary focusing on educational value.
+2. KNOWLEDGE GRAPH NODES:
+   - Identify 3-5 fundamental educational KEY CONCEPTS.
+   - Map this to specific CURRICULUM OBJECTIVES (standards).
+   - Determine the best TARGET AGE for this content.
+   - Select which core SKILLS are practiced (Language, Numeracy, Social, Motor).
+3. FLASHCARDS: Generate 5 flashcards that reinforce the concepts.
+4. QUIZ: Create 3 multiple-choice questions.
+5. ACTIVITIES: Suggest 3 classroom or home activities.
+6. TRANSCRIPT: If this is an audio or video file, provide a FULL, VERBATIM transcript.
+7. MULTILINGUAL: Provide a translated summary and concepts in Tamil and Hindi.
 
 Ensure the final JSON output matches the requested schema perfectly.`,
 });
