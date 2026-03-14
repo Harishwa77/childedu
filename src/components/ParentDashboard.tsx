@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
+import { generateBedtimeStory, BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardTab, Resource, ChildRegistrationInfo } from "@/app/page";
@@ -38,6 +39,9 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<number[]>([]);
+  
+  const [bedtimeStory, setBedtimeStory] = useState<BedtimeStoryOutput | null>(null);
+  const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
@@ -83,13 +87,32 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     }
   };
 
+  const handleGenerateStory = async () => {
+    if (!selectedResource) return;
+    setIsGeneratingStory(true);
+    setBedtimeStory(null);
+    try {
+      const story = await generateBedtimeStory({
+        childName: childInfo.name,
+        activitySummary: selectedResource.summary,
+        theme: "Magic"
+      });
+      setBedtimeStory(story);
+      toast({ title: "Bedtime Story Ready! 🌙", description: `A unique story for ${childInfo.name} has been created.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Story Failed", description: "Could not create your story right now." });
+    } finally {
+      setIsGeneratingStory(false);
+    }
+  };
+
   const connectionScore = Math.min(100, (completedActivities.length / (insights?.homeActivitySuggestions.length || 1)) * 100);
 
-  const handleListen = async () => {
-    if (!insights || isSpeaking) return;
+  const handleListen = async (text: string) => {
+    if (isSpeaking) return;
     setIsSpeaking(true);
     try {
-      const res = await textToSpeech({ text: insights.learningSummary });
+      const res = await textToSpeech({ text });
       const audio = new Audio(res.audioDataUri);
       audio.onended = () => setIsSpeaking(false);
       audio.play();
@@ -164,7 +187,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                     onTranslate={(val) => setInsights(insights ? { ...insights, learningSummary: val } : null)} 
                   />
-                  <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handleListen} disabled={isLoading || isSpeaking}>
+                  <Button size="icon" variant="secondary" className="rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={() => handleListen(insights?.learningSummary || "")} disabled={isLoading || isSpeaking}>
                     {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
                   </Button>
                 </div>
@@ -207,7 +230,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredResources.map((res) => (
-            <Card key={res.id} className="hover:border-primary cursor-pointer transition-all group" onClick={() => setSelectedResource(res)}>
+            <Card key={res.id} className="hover:border-primary cursor-pointer transition-all group" onClick={() => { setSelectedResource(res); setBedtimeStory(null); }}>
               <CardContent className="p-4 flex gap-4 items-center">
                 <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
                 <div className="flex-1 overflow-hidden">
@@ -229,9 +252,15 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         <SheetContent side="bottom" className="h-[80vh] overflow-y-auto bg-white rounded-t-[2rem]">
           {selectedResource && (
             <div className="max-w-4xl mx-auto space-y-8 py-8">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-2xl">{getIcon(selectedResource.fileType)}</div>
-                <SheetTitle className="text-3xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 rounded-2xl">{getIcon(selectedResource.fileType)}</div>
+                  <SheetTitle className="text-3xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
+                </div>
+                <Button variant="outline" className="gap-2 rounded-full border-primary/20 text-primary hover:bg-primary/5" onClick={handleGenerateStory} disabled={isGeneratingStory}>
+                  {isGeneratingStory ? <Loader2 className="w-4 h-4 animate-spin" /> : <Moon className="w-4 h-4" />}
+                  Generate Bedtime Story
+                </Button>
               </div>
 
               <Tabs defaultValue="home-kit" className="w-full">
@@ -242,6 +271,33 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 </TabsList>
 
                 <TabsContent value="home-kit" className="pt-8 space-y-8">
+                  {bedtimeStory && (
+                    <Card className="border-none bg-indigo-50/50 shadow-sm animate-in zoom-in-95 duration-500 overflow-hidden">
+                      <CardHeader className="bg-indigo-600 text-white flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Moon className="w-6 h-6" />
+                          <div>
+                            <CardTitle className="font-headline text-xl">{bedtimeStory.title}</CardTitle>
+                            <CardDescription className="text-indigo-100">A personalized bedtime tale for {childInfo.name}</CardDescription>
+                          </div>
+                        </div>
+                        <Button size="icon" variant="ghost" className="text-white hover:bg-white/20" onClick={() => handleListen(bedtimeStory.story)}>
+                          <Volume2 className="w-4 h-4" />
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="p-8 space-y-6">
+                        <p className="text-lg font-body leading-relaxed text-indigo-900 first-letter:text-4xl first-letter:font-bold first-letter:mr-2 first-letter:float-left whitespace-pre-wrap">
+                          {bedtimeStory.story}
+                        </p>
+                        <Alert className="bg-white border-indigo-200">
+                          <Star className="h-4 w-4 text-indigo-600" />
+                          <AlertTitle className="font-headline font-bold text-indigo-900">Moral of the Story</AlertTitle>
+                          <AlertDescription className="text-indigo-700 italic">"{bedtimeStory.moral}"</AlertDescription>
+                        </Alert>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xl font-headline font-bold flex items-center gap-2">
