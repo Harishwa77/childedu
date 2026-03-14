@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight, Info, Library, Filter } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail, Calendar, TrendingUp, History, Clock, Fingerprint, Network, ArrowRight, Info, Library, Filter, ThumbsUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { TranslationSelector } from "./TranslationSelector";
 import { Textarea } from "@/components/ui/textarea";
 
 interface StudyInteraction {
+  resourceId: string;
   resourceName: string;
   type: 'view' | 'quiz_complete' | 'flashcard_flip';
   performance?: number;
@@ -110,6 +111,44 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     );
   }, [resources, searchQuery]);
 
+  // Recommendation Engine: Suggest resources based on interaction history
+  const recommendations = useMemo(() => {
+    if (studyHistory.length === 0) return resources.slice(0, 3);
+
+    // Get concepts from viewed resources
+    const interactedResourceIds = new Set(studyHistory.map(h => h.resourceId));
+    const viewedConcepts = new Set(
+      studyHistory.flatMap(h => {
+        const res = resources.find(r => r.id === h.resourceId);
+        return res?.aiContent?.keyConcepts || [];
+      })
+    );
+
+    // Find resources that share concepts but haven't been viewed yet
+    return resources
+      .filter(r => !interactedResourceIds.has(r.id))
+      .filter(r => r.aiContent?.keyConcepts.some(c => viewedConcepts.has(c)))
+      .slice(0, 3);
+  }, [resources, studyHistory]);
+
+  // Similarity Engine for selected resource
+  const similarResources = useMemo(() => {
+    if (!selectedResource) return [];
+    
+    return resources
+      .filter(r => r.id !== selectedResource.id)
+      .filter(r => {
+        const sharedConcepts = r.aiContent?.keyConcepts.filter(c => 
+          selectedResource.aiContent?.keyConcepts.includes(c)
+        );
+        const sharedSkills = r.aiContent?.skillsMapped.filter(s => 
+          selectedResource.aiContent?.skillsMapped.includes(s)
+        );
+        return (sharedConcepts?.length || 0) > 0 || (sharedSkills?.length || 0) > 0;
+      })
+      .slice(0, 3);
+  }, [selectedResource, resources]);
+
   useEffect(() => {
     async function fetchInsights() {
       setIsLoading(true);
@@ -134,8 +173,9 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     fetchInsights();
   }, [childInfo.name, childData?.skills, toast]);
 
-  const trackInteraction = (resourceName: string, type: StudyInteraction['type'], performance?: number) => {
+  const trackInteraction = (resourceId: string, resourceName: string, type: StudyInteraction['type'], performance?: number) => {
     const newInteraction: StudyInteraction = {
+      resourceId,
       resourceName,
       type,
       performance,
@@ -153,7 +193,12 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     try {
       const plan = await generatePersonalizedStudyPlan({
         childName: childInfo.name,
-        history: studyHistory,
+        history: studyHistory.map(h => ({
+          resourceName: h.resourceName,
+          type: h.type,
+          performance: h.performance,
+          timestamp: h.timestamp
+        })),
         currentSkills: childData?.skills
       });
       setStudyPlan(plan);
@@ -223,7 +268,10 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const ResourceList = ({ items }: { items: Resource[] }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {items.length > 0 ? items.map((res) => (
-        <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group bg-white" onClick={() => setSelectedResource(res)}>
+        <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group bg-white" onClick={() => {
+          setSelectedResource(res);
+          trackInteraction(res.id, res.fileName, 'view');
+        }}>
           <CardHeader className="p-4 flex flex-row items-center gap-3">
             <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
             <div className="flex flex-col truncate">
@@ -380,6 +428,31 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8 pt-4">
+          {/* Recommendations Header */}
+          {recommendations.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-orange-400" /> Recommended for {childInfo.name}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recommendations.map(res => (
+                  <Card key={res.id} className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => {
+                    setSelectedResource(res);
+                    trackInteraction(res.id, res.fileName, 'view');
+                  }}>
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-lg">{getIcon(res.fileType)}</div>
+                      <div className="flex-1 truncate">
+                        <p className="text-sm font-bold truncate">{res.fileName}</p>
+                        <p className="text-[10px] text-muted-foreground">Matches curiosity graph</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="border-none shadow-lg overflow-hidden flex flex-col">
               <CardHeader className="bg-primary text-white p-6">
@@ -712,7 +785,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
       </Tabs>
 
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
-        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto bg-white rounded-t-[2rem]">
+        <SheetContent side="bottom" className="h-[90vh] overflow-y-auto bg-white rounded-t-[2rem]">
           {selectedResource && (
             <div className="max-w-4xl mx-auto space-y-8 py-8">
               <div className="flex items-center justify-between">
@@ -734,6 +807,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                 </TabsList>
 
                 <TabsContent value="home-kit" className="pt-8 space-y-8">
+                  {/* Bedtime Story Result */}
                   {bedtimeStory && (
                     <Card className="border-none bg-indigo-50/50 shadow-sm animate-in zoom-in-95 duration-500 overflow-hidden">
                       <CardHeader className="bg-indigo-600 text-white flex flex-row items-center justify-between">
@@ -796,6 +870,29 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                       ))}
                     </div>
                   </div>
+
+                  {/* Similarity Recommendations */}
+                  {similarResources.length > 0 && (
+                    <div className="space-y-4">
+                      <Separator />
+                      <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+                        <ThumbsUp className="w-6 h-6 text-primary" /> You Might Also Like
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {similarResources.map(res => (
+                          <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer" onClick={() => {
+                            setSelectedResource(res);
+                            trackInteraction(res.id, res.fileName, 'view');
+                          }}>
+                            <CardHeader className="p-4 flex flex-col items-center gap-2 text-center">
+                              <div className="p-2 bg-muted rounded-lg">{getIcon(res.fileType)}</div>
+                              <CardTitle className="text-xs font-bold truncate w-full">{res.fileName}</CardTitle>
+                            </CardHeader>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="study-kit" className="pt-8 space-y-8">
@@ -805,7 +902,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedResource.aiContent?.flashcards?.map((card, i) => (
-                        <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center" onClick={() => trackInteraction(selectedResource.fileName, 'flashcard_flip')}>
+                        <Card key={i} className="p-6 bg-muted/20 border-none hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center" onClick={() => trackInteraction(selectedResource.id, selectedResource.fileName, 'flashcard_flip')}>
                            <div className="absolute top-0 right-0 p-2 opacity-10"><BookOpen className="w-8 h-8" /></div>
                            <p className="text-xs font-bold text-primary mb-2 uppercase tracking-widest">Question</p>
                            <p className="text-sm font-bold leading-tight group-hover:hidden">{card.question}</p>
@@ -836,7 +933,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
                                   className="justify-start font-body h-auto py-3 px-4 text-left whitespace-normal hover:bg-primary/5 hover:border-primary/50"
                                   onClick={() => {
                                     const isCorrect = opt === q.correctAnswer;
-                                    trackInteraction(selectedResource.fileName, 'quiz_complete', isCorrect ? 100 : 0);
+                                    trackInteraction(selectedResource.id, selectedResource.fileName, 'quiz_complete', isCorrect ? 100 : 0);
                                     if (isCorrect) {
                                       toast({ title: "Correct! 🌟", description: "That's exactly right." });
                                     } else {
