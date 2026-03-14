@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
-import { Heart, Activity, School, MessageCircle, Send, Mail, Fingerprint, Save, CheckCircle2, UserCircle, Settings, LayoutGrid, FileVideo, FileAudio, FileText, Star, Sparkles, BrainCircuit, Lightbulb, Compass, Loader2 } from "lucide-react";
+import { Heart, Activity, School, MessageCircle, Send, Mail, Fingerprint, Save, CheckCircle2, UserCircle, Settings, LayoutGrid, FileVideo, FileAudio, FileText, Star, Sparkles, BrainCircuit, Lightbulb, Compass, Loader2, HelpCircle, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
+import confetti from "canvas-confetti";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -56,6 +58,11 @@ export function ParentDashboard({
   const [isMsgDialogOpen, setIsMsgDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   
+  // Quiz State
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [isQuizWon, setIsQuizWon] = useState(false);
+
   const { toast } = useToast();
 
   const childData = useMemo(() => {
@@ -96,6 +103,36 @@ export function ParentDashboard({
     return <FileText className="w-5 h-5 text-orange-500" />;
   };
 
+  const handleQuizAnswer = (answer: string) => {
+    const quiz = selectedResource?.aiContent?.quiz;
+    if (!quiz) return;
+
+    if (answer === quiz[currentQuizIndex].correctAnswer) {
+      setQuizScore(prev => prev + 1);
+      toast({ title: "Spot On!", description: "That is the correct answer! ✨", variant: "default" });
+      
+      if (currentQuizIndex < quiz.length - 1) {
+        setTimeout(() => setCurrentQuizIndex(prev => prev + 1), 800);
+      } else {
+        setIsQuizWon(true);
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#38BDF8', '#FBBF24', '#FB7185']
+        });
+      }
+    } else {
+      toast({ variant: "destructive", title: "Almost!", description: "Try another one, you can do it! 🌈" });
+    }
+  };
+
+  const resetQuiz = () => {
+    setCurrentQuizIndex(0);
+    setQuizScore(0);
+    setIsQuizWon(false);
+  };
+
   if (activeTab === "resources") {
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
@@ -120,7 +157,7 @@ export function ParentDashboard({
                 {resources
                   .filter(r => tab === "all" || r.fileType.includes(tab === "docs" ? "application" : tab))
                   .map((res) => (
-                    <Card key={res.id} onClick={() => setSelectedResource(res)} className="cursor-pointer group hover:shadow-lg transition-all border-none shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+                    <Card key={res.id} onClick={() => { setSelectedResource(res); resetQuiz(); }} className="cursor-pointer group hover:shadow-lg transition-all border-none shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
                       <CardHeader className="pb-4">
                         <div className="p-3 bg-muted/50 rounded-2xl w-fit">
                           {getResourceIcon(res.fileType)}
@@ -153,35 +190,86 @@ export function ParentDashboard({
                   />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4 text-primary" /> At-Home Extension</h4>
-                    <p className="text-muted-foreground leading-relaxed font-body">
-                      {selectedResource.aiContent?.activitySuggestions?.[0] || "Continue exploring this topic through play!"}
-                    </p>
-                  </div>
-                  <Card className="bg-primary/5 border-none p-4">
-                    <h4 className="font-bold text-sm mb-2">Learning Highlights</h4>
-                    <ul className="space-y-2">
-                      {selectedResource.aiContent?.keyConcepts?.map(c => (
-                        <li key={c} className="text-sm flex items-center gap-2">
-                          <Sparkles className="w-3 h-3 text-primary" /> {c}
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
-                </div>
-                <div className="space-y-4">
-                  <h4 className="font-bold">Recommended Similar Content</h4>
-                  {resources.filter(r => r.id !== selectedResource.id).slice(0, 2).map(r => (
-                    <div key={r.id} className="p-3 bg-muted/50 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-muted" onClick={() => setSelectedResource(r)}>
-                      {getResourceIcon(r.fileType)}
-                      <span className="text-sm font-bold truncate">{r.fileName}</span>
+              
+              <Tabs defaultValue="overview" className="mt-6">
+                <TabsList className="bg-muted/50 p-1 rounded-full h-11 mb-6">
+                  <TabsTrigger value="overview" className="rounded-full px-6">Overview</TabsTrigger>
+                  <TabsTrigger value="quiz" className="rounded-full px-6 gap-2">
+                    <HelpCircle className="w-4 h-4" /> Quick Quiz
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-2">
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4 text-primary" /> At-Home Extension</h4>
+                        <p className="text-muted-foreground leading-relaxed font-body">
+                          {selectedResource.aiContent?.activitySuggestions?.[0] || "Continue exploring this topic through play!"}
+                        </p>
+                      </div>
+                      <Card className="bg-primary/5 border-none p-4">
+                        <h4 className="font-bold text-sm mb-2">Learning Highlights</h4>
+                        <ul className="space-y-2">
+                          {selectedResource.aiContent?.keyConcepts?.map(c => (
+                            <li key={c} className="text-sm flex items-center gap-2">
+                              <Sparkles className="w-3 h-3 text-primary" /> {c}
+                            </li>
+                          ))}
+                        </ul>
+                      </Card>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="space-y-4">
+                      <h4 className="font-bold">Recommended Similar Content</h4>
+                      {resources.filter(r => r.id !== selectedResource.id).slice(0, 2).map(r => (
+                        <div key={r.id} className="p-3 bg-muted/50 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-muted" onClick={() => { setSelectedResource(r); resetQuiz(); }}>
+                          {getResourceIcon(r.fileType)}
+                          <span className="text-sm font-bold truncate">{r.fileName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="quiz">
+                  <div className="min-h-[300px] flex items-center justify-center">
+                    {isQuizWon ? (
+                      <div className="text-center space-y-6 animate-in zoom-in duration-500 py-12 w-full bg-emerald-50 rounded-[2rem] border-4 border-emerald-100">
+                         <Trophy className="w-24 h-24 text-yellow-500 mx-auto animate-bounce" />
+                         <h3 className="text-4xl font-headline font-bold text-emerald-600">Amazing Explorer!</h3>
+                         <p className="text-xl font-body text-emerald-700">You mastered the quiz for {selectedResource.fileName}!</p>
+                         <Button onClick={resetQuiz} variant="outline" className="rounded-full border-emerald-200 text-emerald-600 hover:bg-emerald-100">
+                           Play Again
+                         </Button>
+                      </div>
+                    ) : selectedResource.aiContent?.quiz && selectedResource.aiContent.quiz.length > 0 ? (
+                      <div className="w-full space-y-8 animate-in slide-in-from-bottom-5">
+                        <div className="text-center space-y-2">
+                          <Badge className="bg-primary/10 text-primary border-primary/20">Question {currentQuizIndex + 1} of {selectedResource.aiContent.quiz.length}</Badge>
+                          <h3 className="text-2xl font-headline font-bold">{selectedResource.aiContent.quiz[currentQuizIndex].question}</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+                          {selectedResource.aiContent.quiz[currentQuizIndex].options.map((option, idx) => (
+                            <Button 
+                              key={idx}
+                              variant="outline"
+                              className="h-auto py-4 px-6 text-lg font-body rounded-2xl border-2 border-primary/10 hover:border-primary hover:bg-primary/5 bouncy-hover whitespace-normal"
+                              onClick={() => handleQuizAnswer(option)}
+                            >
+                              {option}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center opacity-40 space-y-4">
+                        <HelpCircle className="w-16 h-16 mx-auto" />
+                        <p className="font-headline text-xl">The AI is still thinking of questions...</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         )}

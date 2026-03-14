@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle, Trash2, FileVideo, FileAudio, FileText, LayoutGrid, Upload } from "lucide-react";
+import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle, Trash2, FileVideo, FileAudio, FileText, LayoutGrid, Upload, HelpCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -206,35 +206,82 @@ export function TeacherDashboard({
                   />
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Star className="w-4 h-4 text-primary" /> Summary</h4>
-                    <p className="text-muted-foreground leading-relaxed font-body">{selectedResource.summary}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg mb-2">Key Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedResource.aiContent?.skillsMapped?.map(s => (
-                        <Badge key={s} variant="secondary">{s}</Badge>
-                      ))}
+              <Tabs defaultValue="overview" className="mt-6">
+                <TabsList className="bg-muted/50 p-1 rounded-full h-11 mb-6">
+                  <TabsTrigger value="overview" className="rounded-full px-6">Overview</TabsTrigger>
+                  <TabsTrigger value="quiz" className="rounded-full px-6 gap-2">
+                    <HelpCircle className="w-4 h-4" /> Preview Quiz
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="font-bold text-lg mb-2 flex items-center gap-2"><Star className="w-4 h-4 text-primary" /> Summary</h4>
+                        <p className="text-muted-foreground leading-relaxed font-body">{selectedResource.summary}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg mb-2">Key Skills</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedResource.aiContent?.skillsMapped?.map(s => (
+                            <Badge key={s} variant="secondary">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      <Card className="bg-muted/50 border-none">
+                        <CardHeader><CardTitle className="text-base">Learning Objectives</CardTitle></CardHeader>
+                        <CardContent className="space-y-2">
+                          {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
+                            <div key={i} className="flex gap-2 text-sm">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <span>{obj}</span>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
-                </div>
-                <div className="space-y-6">
-                  <Card className="bg-muted/50 border-none">
-                    <CardHeader><CardTitle className="text-base">Learning Objectives</CardTitle></CardHeader>
-                    <CardContent className="space-y-2">
-                      {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
-                        <div key={i} className="flex gap-2 text-sm">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span>{obj}</span>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+                </TabsContent>
+
+                <TabsContent value="quiz">
+                  <div className="space-y-6">
+                    {selectedResource.aiContent?.quiz && selectedResource.aiContent.quiz.length > 0 ? (
+                      selectedResource.aiContent.quiz.map((q, i) => (
+                        <Card key={i} className="border-2 border-primary/10">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-headline">Q{i + 1}: {q.question}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {q.options.map((opt, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={cn(
+                                    "p-3 rounded-xl border-2 font-body text-sm",
+                                    opt === q.correctAnswer 
+                                      ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
+                                      : "bg-white border-muted"
+                                  )}
+                                >
+                                  {opt}
+                                  {opt === q.correctAnswer && <span className="ml-2 text-xs font-bold">(Correct Answer)</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground italic">
+                        No quiz questions were generated for this resource.
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         )}
