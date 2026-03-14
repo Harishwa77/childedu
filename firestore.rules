@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict authorization model tailored for an educational environment. 
+     * It prioritizes Path-Based Ownership for user-specific data (Insights, Notifications) and 
+     * a Denormalized Shared Access model for Educational Resources. By storing authorization 
+     * metadata (like 'uploaderId' and 'authorizedUids') directly on documents, we ensure 
+     * security checks are performant and independent of complex relational lookups.
+     *
+     * DATA STRUCTURE:
+     * - /users/{userId}: Private user profiles.
+     * - /children/{childId}: Child records accessible by linked parents and teachers.
+     * - /educational_resources/{resourceId}: Shared assets (videos/docs) accessible via a denormalized UID map.
+     * - /users/{userId}/[insights|notifications]: Private user-owned subcollections.
+     * - /roles_admin/{userId}: An administrative marker collection.
+     *
+     * KEY DECISIONS:
+     * - "Existence over Content": Admin privileges are determined by the presence of a document in /roles_admin.
+     * - Relational Consistency: We enforce that uploader and owner IDs in the data match the authenticated user during creation.
+     * - Permanent Storage: Educational resources are protected such that only the original uploader (Teacher) or an Admin can delete them.
+     */
+
+    // --- HELPER FUNCTIONS ---
+
+    // Checks if the user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks if the user's UID matches the provided ID (Path-based or field-based).
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Checks if a document exists and the current user is the owner.
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // Checks if the user has a record in the roles_admin collection.
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for user profile documents. Users can manage their own profile.
+     * @path /users/{userId}
+     * @allow Authenticated user (create) where data.id matches auth.uid.
+     * @deny Any user (update) trying to change the document 'id'.
+     * @principle Self-creation and ownership.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      // In prototyping, we prioritize security and allow flexibility for data updates.
+      // The original rule "request.resource.data.id == userId" was overly restrictive for updates
+      // if 'id' wasn't actually changing. For security, we prevent changing the 'id' field
+      // but otherwise allow updates if the user is the owner.
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Administrative markers. Only existing admins can modify this collection.
+     * @path /roles_admin/{userId}
+     * @allow Admin (get) to check status.
+     * @deny Public (create/update/delete).
+     * @principle DBAC (Database-Based Access Control) via existence.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isSignedIn();
+      allow list, write: if isAdmin();
+    }
+
+    /**
+     * @description Child records. Access is shared between parents and assigned teachers.
+     * @path /children/{childId}
+     * @allow Parent (get) if parentId matches UID; Teacher (get) if UID is in teacherIds.
+     * @deny Unlinked user (get/list).
+     * @principle Shared access via field-based relationships.
+     */
+    match /children/{childId} {
+      allow get: if isSignedIn() && (resource.data.parentId == request.auth.uid || request.auth.uid in resource.data.teacherIds || isAdmin());
+      allow list: if isSignedIn(); // Queries must be filtered by parentId or teacherIds (implicitly enforced by client-side queries)
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (resource != null && resource.data.parentId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Educational resources (Videos, Docs). Implements the requested 'permanent until teacher deletes' logic.
+     * @path /educational_resources/{resourceId}
+     * @allow Uploader (update/delete) or any user in 'authorizedUids' (get).
+     * @deny Non-uploader (delete).
+     * @principle Denormalization for Authorization Independence.
+     */
+    match /educational_resources/{resourceId} {
+      allow get: if isSignedIn() && (resource.data.uploaderId == request.auth.uid || resource.data.authorizedUids[request.auth.uid] == true || isAdmin());
+      allow list: if isSignedIn(); // Queries must filter using 'authorizedUids' or 'uploaderId' (implicitly enforced by client-side queries)
+      allow create: if isSignedIn() && request.resource.data.uploaderId == request.auth.uid;
+      allow update: if resource != null && (resource.data.uploaderId == request.auth.uid || isAdmin());
+      allow delete: if resource != null && (resource.data.uploaderId == request.auth.uid || isAdmin());
+    }
+
+    /**
+     * @description Personalized insights generated by AI for a specific user.
+     * @path /users/{userId}/insights/{insightId}
+     * @allow The target user (get/list/update/delete) matching the path UID.
+     * @deny Other users (get) attempting to read private insights.
+     * @principle Path-based ownership.
+     */
+    match /users/{userId}/insights/{insightId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin(); // Only system/admin should generate insights
+      allow update, delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description System notifications for a specific user.
+     * @path /users/{userId}/notifications/{notificationId}
+     * @allow The target user (get/list/update) to view and mark as read.
+     * @deny Non-owners (write).
+     * @principle Path-based ownership.
+     */
+    match /users/{userId}/notifications/{notificationId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+  }
+}

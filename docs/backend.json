@@ -1,0 +1,445 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account within the EduSense AI platform, supporting different roles like Teacher, Parent, or Administrator.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for login and notifications.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user, determining their permissions and dashboard view.",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the user account.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "createdAt"
+      ]
+    },
+    "Child": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Child",
+      "type": "object",
+      "description": "Represents a child enrolled in the early childhood education program, linking parents and teachers to their learning journey.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Child entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the child."
+        },
+        "parentId": {
+          "type": "string",
+          "description": "Reference to the User entity who is the primary parent of this child. (Relationship: User 1:N Child)"
+        },
+        "teacherIds": {
+          "type": "array",
+          "description": "References to User entities who are teachers for this child. (Relationship: Child N:N User)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enrollmentDate": {
+          "type": "string",
+          "description": "The date when the child was enrolled in the program.",
+          "format": "date"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the child record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the child record.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "parentId",
+        "enrollmentDate",
+        "createdAt"
+      ]
+    },
+    "EducationalResource": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EducationalResource",
+      "type": "object",
+      "description": "Represents an uploaded educational asset (audio, video, document, or image) along with its processing metadata and AI-generated content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EducationalResource entity."
+        },
+        "uploaderId": {
+          "type": "string",
+          "description": "Reference to the User entity who uploaded this resource. (Relationship: User 1:N EducationalResource)"
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "The type of educational resource (e.g., audio, video, document, image).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original file name of the uploaded resource."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "The permanent URL to the resource file stored in Firebase Storage.",
+          "format": "uri"
+        },
+        "uploadTimestamp": {
+          "type": "string",
+          "description": "Timestamp when the resource was uploaded.",
+          "format": "date-time"
+        },
+        "processingStatus": {
+          "type": "string",
+          "description": "Current status of the AI processing pipeline for this resource (e.g., pending, processing, completed, failed).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "originalLanguage": {
+          "type": "string",
+          "description": "The detected original language of the resource content (e.g., 'en', 'ta', 'hi')."
+        },
+        "transcripts": {
+          "type": "array",
+          "description": "An array of speech-to-text transcripts, potentially in multiple languages.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summaries": {
+          "type": "array",
+          "description": "An array of AI-generated summaries of the content, potentially in multiple languages.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extractedLearningObjectives": {
+          "type": "array",
+          "description": "Key learning objectives identified from documents or activities.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "categorizedActivities": {
+          "type": "array",
+          "description": "Categories of learning activities identified from videos or images.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keywords": {
+          "type": "array",
+          "description": "Important keywords extracted from the content.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vectorEmbeddingRefId": {
+          "type": "string",
+          "description": "Optional ID or reference to the vector embedding of this resource in an external vector database (e.g., Pinecone)."
+        },
+        "associatedChildIds": {
+          "type": "array",
+          "description": "References to Child entities that this resource is specifically related to (e.g., student work). (Relationship: Child N:N EducationalResource)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the entity record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the entity record.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "uploaderId",
+        "resourceType",
+        "fileName",
+        "fileUrl",
+        "uploadTimestamp",
+        "processingStatus",
+        "createdAt"
+      ]
+    },
+    "Insight": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Insight",
+      "type": "object",
+      "description": "Represents an AI-generated insight, recommendation, or analytical summary tailored for a specific user or role, derived from processed educational resources.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Insight entity."
+        },
+        "targetUserId": {
+          "type": "string",
+          "description": "Reference to the User entity for whom this insight is generated. (Relationship: User 1:N Insight)"
+        },
+        "insightType": {
+          "type": "string",
+          "description": "The category or type of insight (e.g., teaching activity suggestion, child learning summary, program analytics).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "language": {
+          "type": "string",
+          "description": "The language of the insight content (e.g., 'en', 'ta', 'hi')."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main textual content of the insight."
+        },
+        "relatedResourceIds": {
+          "type": "array",
+          "description": "References to EducationalResource entities that this insight is based on. (Relationship: EducationalResource N:N Insight)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedChildId": {
+          "type": "string",
+          "description": "Optional reference to a Child entity if the insight is child-specific (e.g., learning summary for a parent about their child). (Relationship: Child 1:N Insight)"
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "Timestamp when the insight was generated.",
+          "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates if the target user has viewed this insight."
+        }
+      },
+      "required": [
+        "id",
+        "targetUserId",
+        "insightType",
+        "language",
+        "content",
+        "generatedAt",
+        "isRead"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a system notification or alert sent to a user regarding new content, insights, or system updates.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Notification entity."
+        },
+        "targetUserId": {
+          "type": "string",
+          "description": "Reference to the User entity who should receive this notification. (Relationship: User 1:N Notification)"
+        },
+        "notificationType": {
+          "type": "string",
+          "description": "The type of notification (e.g., new_resource_processed, new_insight_available, system_update).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the notification message."
+        },
+        "language": {
+          "type": "string",
+          "description": "The language of the notification message."
+        },
+        "linkToEntityId": {
+          "type": "string",
+          "description": "Optional ID of a related entity (e.g., EducationalResource or Insight) for deep linking."
+        },
+        "sentAt": {
+          "type": "string",
+          "description": "Timestamp when the notification was generated/sent.",
+          "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates if the user has viewed this notification."
+        }
+      },
+      "required": [
+        "id",
+        "targetUserId",
+        "notificationType",
+        "message",
+        "language",
+        "sentAt",
+        "isRead"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles including their unique ID, email, name, and assigned role (Teacher, Parent, Administrator). The 'role' field is used for UI logic and basic permissions, while critical admin privileges are granted by existence in /roles_admin. Security rules must prevent unauthorized updates to the 'role' field.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/children/{childId}",
+        "definition": {
+          "entityName": "Child",
+          "schema": {
+            "$ref": "#/backend/entities/Child"
+          },
+          "description": "Stores details about each child enrolled in the program. Includes 'parentId' for primary parent ownership and 'teacherIds' for associated teachers. These fields are directly used in security rules to control access to child records.",
+          "params": [
+            {
+              "name": "childId",
+              "description": "The unique identifier of the child."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/educational_resources/{resourceId}",
+        "definition": {
+          "entityName": "EducationalResource",
+          "schema": {
+            "$ref": "#/backend/entities/EducationalResource"
+          },
+          "description": "Stores metadata for all uploaded educational assets (videos, audio, documents, images). Includes 'uploaderId' for ownership. CRITICAL: This collection includes a denormalized 'authorizedUids' map (containing the uploader, parents of associated children, and teachers of associated children) for authorization independence, enabling secure and efficient access checks for reads and lists without 'get()' operations.",
+          "params": [
+            {
+              "name": "resourceId",
+              "description": "The unique identifier of the educational resource."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/insights/{insightId}",
+        "definition": {
+          "entityName": "Insight",
+          "schema": {
+            "$ref": "#/backend/entities/Insight"
+          },
+          "description": "Stores AI-generated insights personalized for a specific user. Path-based ownership ensures that only the 'targetUserId' (matching the path 'userId') can read, update, or delete their insights, simplifying security rules and supporting QAPs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who is the target of this insight."
+            },
+            {
+              "name": "insightId",
+              "description": "The unique identifier of the insight."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores system notifications for a specific user. Path-based ownership ensures that only the 'targetUserId' (matching the path 'userId') can read, update, or delete their notifications, simplifying security rules and supporting QAPs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who is the target of this notification."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier of the notification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "A collection used to grant explicit administrator privileges. The existence of a document at this path for a specific 'userId' signifies that the user has administrator access, following the 'Existence over Content' principle for DBAC.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who has been granted administrator privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure is designed to adhere strictly to the core principles of Authorization Independence, Clarity of Intent, DBAC, QAPs, and Invariants. It prioritizes a flat structure with strategic denormalization and path-based ownership to ensure robust, debuggable, and scalable security rules.\n\n**Authorization Independence (CRITICAL):**\n1.  **Educational Resources (/educational_resources/{resourceId}):** To achieve authorization independence, each `EducationalResource` document will explicitly contain a denormalized `authorizedUids` map (e.g., `{ \"uid1\": true, \"uid2\": true }`). This map will be populated with the `uploaderId`, the `parentId` of every child referenced in `associatedChildIds`, and all `teacherIds` associated with every child in `associatedChildIds`. This eliminates the need for `get()` calls in security rules to traverse relationships (e.g., checking a child's parent or teachers to authorize resource access). All authorization logic for reading, updating, or deleting a resource can be performed by simply checking `request.auth.uid in resource.authorizedUids` or `request.auth.uid == resource.uploaderId`.\n2.  **Insights and Notifications (/users/{userId}/insights/{insightId} and /users/{userId}/notifications/{notificationId}):** These collections leverage path-based ownership. The `targetUserId` is explicitly embedded in the path (`{userId}`), allowing security rules to directly compare `request.auth.uid` with the path parameter. This inherently ensures authorization independence as no cross-document reads are required.\n3.  **Children (/children/{childId}):** Each `Child` document explicitly stores `parentId` and `teacherIds`. Access rules for child documents will directly evaluate `request.auth.uid` against these fields, again avoiding hierarchical dependencies.\n\n**QAPs (Rules are not Filters):**\n1.  **Insights and Notifications:** By placing these under `/users/{userId}/`, `list` operations automatically constrain results to the requesting user's data. Rules can simply `allow list: if request.auth.uid == userId;`, guaranteeing that users only retrieve their own personalized data.\n2.  **Educational Resources:** The denormalized `authorizedUids` map within each `EducationalResource` document is crucial for QAPs. `list` queries can include a filter such as `where('authorizedUids', '==', request.auth.uid)` (conceptually, in rules this would be `allow list: if request.auth.uid in resource.authorizedUids`) or `where('uploaderId', '==', request.auth.uid)`. This ensures that when teachers or parents list resources, they only receive documents they are explicitly authorized to view, without the security rules performing expensive or insecure implicit filtering.\n3.  **Children:** `list` operations on `/children` can be secured by requiring filters like `where('parentId', '==', request.auth.uid)` for parents, or `where('teacherIds', 'array-contains', request.auth.uid)` for teachers. Administrators would have broader list access through a `roles_admin` check.\n\n**DBAC (No Custom Claims):**\n*   User roles (Teacher, Parent, Administrator) are stored in the `role` field within the `/users/{userId}` documents. For critical administrative privileges, a dedicated collection `/roles_admin/{userId}` is introduced. The *existence* of a document at this path for `request.auth.uid` grants admin rights, adhering to the "
+  }
+}
