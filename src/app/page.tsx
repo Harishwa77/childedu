@@ -82,11 +82,11 @@ export default function Home() {
     }
   }, [user, isUserLoading, auth]);
 
-  // Fetch resources from Firestore
+  // Fetch resources from Firestore - only after user is signed in to avoid permission errors
   const resourcesQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(collection(db, "educational_resources"), orderBy("timestamp", "desc"));
-  }, [db]);
+  }, [db, user]);
 
   const { data: firestoreResources, isLoading: isResourcesLoading } = useCollection<Resource>(resourcesQuery);
 
