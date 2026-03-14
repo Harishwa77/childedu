@@ -61,10 +61,21 @@ const translateAiInsightsFlow = ai.defineFlow(
     outputSchema: TranslateAiInsightsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('Failed to translate content.');
+    try {
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error('Failed to translate content.');
+      }
+      return output;
+    } catch (error: any) {
+      // If quota is hit (429), return the original content as a fallback
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        console.warn("Translation quota exceeded, falling back to original content.");
+        return { translatedContent: input.content };
+      }
+      // For other errors, log and rethrow
+      console.error("Translation Flow Error:", error);
+      throw error;
     }
-    return output;
   }
 );

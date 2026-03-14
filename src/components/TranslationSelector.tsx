@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button";
 import { translateAiInsights } from "@/ai/flows/translate-ai-insights";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const languages = [
@@ -19,8 +20,8 @@ const languages = [
   { id: "Kannada", label: "Kannada (ಕನ್ನಡ)" },
   { id: "Malayalam", label: "Malayalam (മലയാളം)" },
   { id: "Punjabi", label: "Punjabi (ਪੰਜਾਬੀ)" },
-  { id: "Odia", label: "Odia (ଓੜିଆ)" },
-  { id: "Assamese", label: "Assamese (অসমীয়া)" },
+  { id: "Odia", label: "Odia (ଓੜிଆ)" },
+  { id: "Assamese", label: "Assamese (অসমীயா)" },
   { id: "Urdu", label: "Urdu (اردو)" },
 ] as const;
 
@@ -35,6 +36,7 @@ interface TranslationSelectorProps {
 export function TranslationSelector({ content, onTranslate, className }: TranslationSelectorProps) {
   const [currentLang, setCurrentLang] = useState<LanguageId>("English");
   const [isTranslating, setIsTranslating] = useState(false);
+  const { toast } = useToast();
 
   const handleTranslate = async (target: LanguageId) => {
     if (target === currentLang || !content) return;
@@ -45,10 +47,25 @@ export function TranslationSelector({ content, onTranslate, className }: Transla
         content: content,
         targetLanguage: target as any
       });
-      onTranslate(result.translatedContent);
-      setCurrentLang(target);
+      
+      // If the result is the same as input, it likely hit the fallback (quota)
+      if (result.translatedContent === content && target !== "English") {
+        toast({
+          title: "Translation Service Busy",
+          description: "Our AI is currently at capacity. Displaying original text for now.",
+          variant: "default"
+        });
+      } else {
+        onTranslate(result.translatedContent);
+        setCurrentLang(target);
+      }
     } catch (error) {
       console.error("Translation Error:", error);
+      toast({
+        title: "Translation Error",
+        description: "Could not translate content at this time.",
+        variant: "destructive"
+      });
     } finally {
       setIsTranslating(false);
     }
