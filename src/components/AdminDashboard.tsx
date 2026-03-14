@@ -1,7 +1,7 @@
 
 "use client";
 
-import { BarChart3, TrendingUp, Shield, Download, Users, FileBarChart } from "lucide-react";
+import { BarChart3, TrendingUp, Shield, Download, Users, FileBarChart, BrainCircuit, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,7 +9,7 @@ import {
   ChartTooltip, 
   ChartTooltipContent 
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, ResponsiveContainer } from "recharts";
 import { DashboardTab } from "@/app/page";
 
 const data = [
@@ -38,7 +38,7 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
         </div>
       </div>
 
-      {(activeTab === "dashboard" || !activeTab) && (
+      {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="border-none bg-indigo-600 text-white">
             <CardContent className="p-6 space-y-2">
@@ -75,8 +75,11 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
         {(activeTab === "dashboard" || activeTab === "insights") && (
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Engagement & Resource Trends</CardTitle>
-              <CardDescription className="font-body">Monthly activity across all dashboards</CardDescription>
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-primary" />
+                <CardTitle className="font-headline text-xl">Engagement & Resource Trends</CardTitle>
+              </div>
+              <CardDescription className="font-body">AI-driven activity forecasting for next quarter</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full mt-4">
@@ -102,6 +105,7 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="font-headline text-xl">Top Activity Categories</CardTitle>
+                <CardDescription>Distribution of content processed by EduSense AI</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
@@ -126,16 +130,25 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
           {(activeTab === "dashboard" || activeTab === "insights") && (
             <Card className="bg-primary/5 border-primary/10">
               <CardHeader className="pb-2">
-                <CardTitle className="font-headline text-lg">System Insights</CardTitle>
-              </CardHeader>
-              <CardContent className="font-body text-sm space-y-3">
-                <div className="flex items-start gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <p>Multimedia uploads have increased by <span className="font-bold">24%</span> since the introduction of the new Teacher Hub interface.</p>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  <CardTitle className="font-headline text-lg">System-Wide Insights</CardTitle>
                 </div>
-                <div className="flex items-start gap-2">
-                  <BarChart3 className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                  <p>Language translation usage for <span className="font-bold">Tamil</span> is up 15% this week, showing strong regional adoption.</p>
+              </CardHeader>
+              <CardContent className="font-body text-sm space-y-4">
+                <div className="flex items-start gap-3 p-3 bg-white rounded-xl border">
+                  <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <div>
+                    <p className="font-bold">Growth Alert</p>
+                    <p className="text-muted-foreground">Multimedia uploads have increased by <span className="font-bold text-foreground">24%</span> since the introduction of the new Teacher Hub interface.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white rounded-xl border">
+                  <BarChart3 className="w-5 h-5 text-blue-500 shrink-0" />
+                  <div>
+                    <p className="font-bold">Regional Adoption</p>
+                    <p className="text-muted-foreground">Language translation usage for <span className="font-bold text-foreground">Tamil</span> is up 15% this week, showing strong regional engagement.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UploadModal } from "./UploadModal";
@@ -59,7 +59,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {(activeTab === "dashboard" || !activeTab) && (
+      {activeTab === "dashboard" && (
         <>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -121,7 +121,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Processed Resources */}
+        {/* Processed Resources Tab */}
         {(activeTab === "dashboard" || activeTab === "resources") && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -130,7 +130,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
               </h3>
               <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
             </div>
-            <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
+            <ScrollArea className="h-[600px] rounded-xl border bg-white p-4">
               <div className="space-y-4">
                 {filteredResources.length > 0 ? (
                   filteredResources.map((res) => (
@@ -180,43 +180,75 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
           </div>
         )}
 
-        {/* AI Recommendations */}
+        {/* AI Recommendations / Insights Tab */}
         {(activeTab === "dashboard" || activeTab === "insights") && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-yellow-500" />
-              Suggested Activities
-            </h3>
-            <div className="space-y-4">
-              <Card className="bg-accent/5 border-accent/20">
-                <CardContent className="p-6 space-y-4">
-                  <div className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
-                        <Badge className="bg-accent">Cognitive</Badge>
-                      </div>
-                      <p className="text-sm font-body text-muted-foreground">Based on recent tactile play observations, introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-headline font-bold">Pedagogical Insights</h3>
+            </div>
+            
+            {activeTab === "insights" && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg font-headline flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" /> Weekly Skill Trends
+                  </CardTitle>
+                  <CardDescription>AI analysis of classroom data over the last 7 days</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-xl border">
+                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Growth Area</p>
+                      <p className="text-lg font-bold">Social Cooperation</p>
+                      <p className="text-sm text-emerald-600 font-bold">+24% improvement</p>
                     </div>
-                    
-                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-headline font-bold text-primary">Cooperative Block Bridge</h4>
-                        <Badge className="bg-accent">Social</Badge>
-                      </div>
-                      <p className="text-sm font-body text-muted-foreground">Utilize the high engagement in block building to create team goals: building a bridge that spans across two tables.</p>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-headline font-bold text-primary">Rhythmic Counting</h4>
-                        <Badge className="bg-accent">Math</Badge>
-                      </div>
-                      <p className="text-sm font-body text-muted-foreground">Combine counting exercises with rhythmic clapping to address the challenges observed in pattern recognition today.</p>
+                    <div className="p-4 bg-white rounded-xl border">
+                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Focus Needed</p>
+                      <p className="text-lg font-bold">Early Literacy</p>
+                      <p className="text-sm text-orange-600 font-bold">-5% engagement</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            <div className="space-y-4">
+              <h4 className="text-lg font-headline font-bold flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-yellow-500" />
+                Suggested Activities
+              </h4>
+              <div className="space-y-4">
+                <Card className="bg-accent/5 border-accent/20">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="space-y-4">
+                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
+                          <Badge className="bg-accent">Cognitive</Badge>
+                        </div>
+                        <p className="text-sm font-body text-muted-foreground">Based on recent tactile play observations, introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
+                      </div>
+                      
+                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-headline font-bold text-primary">Cooperative Block Bridge</h4>
+                          <Badge className="bg-accent">Social</Badge>
+                        </div>
+                        <p className="text-sm font-body text-muted-foreground">Utilize the high engagement in block building to create team goals: building a bridge that spans across two tables.</p>
+                      </div>
+
+                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-headline font-bold text-primary">Rhythmic Counting</h4>
+                          <Badge className="bg-accent">Math</Badge>
+                        </div>
+                        <p className="text-sm font-body text-muted-foreground">Combine counting exercises with rhythmic clapping to address the challenges observed in pattern recognition today.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         )}

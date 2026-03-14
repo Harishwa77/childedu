@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2 } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
         <Badge variant="outline" className="px-4 py-1 border-primary text-primary font-bold">Preschool B</Badge>
       </div>
 
-      {(activeTab === "dashboard" || !activeTab) && (
+      {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Learning Summary */}
           <Card className="border-none shadow-lg overflow-hidden flex flex-col">
@@ -139,55 +139,98 @@ export function ParentDashboard({ searchQuery, activeTab }: { searchQuery: strin
         </div>
       )}
 
-      {/* Home Activities */}
+      {/* Home Activities / Insights Tab */}
       {(activeTab === "dashboard" || activeTab === "insights") && (
-        <div className="space-y-4">
-          <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
-            <Home className="w-6 h-6 text-accent" />
-            Home Activity Suggestions
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {isLoading ? (
-              [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
-            ) : (
-              insights?.homeActivitySuggestions
-                .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((act, idx) => (
-                <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent group-hover:text-white transition-colors">
-                        <ChevronRight className="w-4 h-4" />
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-headline font-bold flex items-center gap-2">
+              <BrainCircuit className="w-6 h-6 text-primary" />
+              Developmental Insights
+            </h3>
+          </div>
+
+          {activeTab === "insights" && (
+             <Card className="bg-accent/5 border-accent/20">
+                <CardHeader>
+                  <CardTitle className="text-lg font-headline flex items-center gap-2">
+                    <Target className="w-5 h-5" /> Learning Milestones
+                  </CardTitle>
+                  <CardDescription>Progress tracked against early childhood standards</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    {[
+                      { area: "Scientific Inquiry", progress: 85, color: "bg-blue-500" },
+                      { area: "Fine Motor Skills", progress: 70, color: "bg-emerald-500" },
+                      { area: "Emotional Resilience", progress: 90, color: "bg-purple-500" },
+                    ].map(item => (
+                      <div key={item.area} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-body font-medium">{item.area}</span>
+                          <span className="text-muted-foreground">{item.progress}% Milestone Reach</span>
+                        </div>
+                        <div className="h-2 w-full bg-accent/10 rounded-full overflow-hidden">
+                          <div className={`h-full ${item.color}`} style={{ width: `${item.progress}%` }}></div>
+                        </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] opacity-60">Activity {idx + 1}</Badge>
-                    </div>
-                    <p className="font-body text-base leading-snug">
-                      {act}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+                    ))}
+                  </div>
+                </CardContent>
+             </Card>
+          )}
+
+          <div className="space-y-4">
+            <h4 className="text-xl font-headline font-bold flex items-center gap-2">
+              <Home className="w-6 h-6 text-accent" />
+              Home Activity Suggestions
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {isLoading ? (
+                [1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)
+              ) : (
+                insights?.homeActivitySuggestions
+                  .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((act, idx) => (
+                  <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent group-hover:text-white transition-colors">
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
+                        <Badge variant="outline" className="text-[10px] opacity-60">Activity {idx + 1}</Badge>
+                      </div>
+                      <p className="font-body text-base leading-snug">
+                        {act}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Recent Updates */}
+      {/* Recent Updates / Resources Tab */}
       {(activeTab === "dashboard" || activeTab === "resources") && (
         <Card className="border-accent/10 bg-accent/5">
           <CardHeader>
             <CardTitle className="text-xl font-headline">Recent Moments</CardTitle>
+            <CardDescription>Classroom photos and videos shared this week</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="min-w-[150px] space-y-2">
-                  <div className="aspect-square bg-muted rounded-xl overflow-hidden relative">
-                    <img src={`https://picsum.photos/seed/moment${i}/300/300`} alt="Activity" className="object-cover w-full h-full" />
+                <div key={i} className="min-w-[180px] space-y-2">
+                  <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden relative border shadow-sm">
+                    <img src={`https://picsum.photos/seed/moment${i}/400/300`} alt="Activity" className="object-cover w-full h-full" />
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {i} day{i > 1 ? 's' : ''} ago
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {i} day{i > 1 ? 's' : ''} ago
+                    </div>
+                    <Badge variant="secondary" className="text-[9px] uppercase">Activity</Badge>
                   </div>
                 </div>
               ))}
