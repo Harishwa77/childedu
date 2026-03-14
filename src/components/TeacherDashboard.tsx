@@ -48,7 +48,6 @@ interface TeacherDashboardProps {
   messages: UserMessage[];
   onSendMessage: (msg: { subject: string; text: string }) => void;
   onMarkRead: (id: string) => void;
-  onAddResource: (resource: Resource) => void;
   onDeleteResource: (id: string) => void;
 }
 
@@ -61,7 +60,6 @@ export function TeacherDashboard({
   messages, 
   onSendMessage, 
   onMarkRead,
-  onAddResource,
   onDeleteResource
 }: TeacherDashboardProps) {
   const { toast } = useToast();
@@ -93,12 +91,12 @@ export function TeacherDashboard({
 
   const handleDeleteResource = (resourceId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (confirm("Are you sure you want to delete this resource?")) {
+    if (confirm("Are you sure you want to delete this resource permanently?")) {
       onDeleteResource(resourceId);
       setSelectedResource(null);
       toast({
         title: "Resource Deleted",
-        description: "The resource has been removed from your local session."
+        description: "The resource has been permanently removed from the database."
       });
     }
   };
@@ -253,7 +251,7 @@ export function TeacherDashboard({
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-        <UploadModal onProcessed={onAddResource} />
+        <UploadModal />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
 import { LoginPage } from "@/components/LoginPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -10,6 +10,10 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
+import { useUser, useFirestore, useAuth, useMemoFirebase, useCollection } from "@/firebase";
+import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
+import { collection, doc } from "firebase/firestore";
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
 
@@ -67,12 +71,29 @@ export interface UserMessage {
 }
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const auth = useAuth();
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const [resources, setResources] = useState<Resource[]>([]);
+
+  // Firebase Auth initialization
+  useEffect(() => {
+    if (!isUserLoading && !user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  // Firestore Data fetching
+  const resourcesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return collection(db, "educational_resources");
+  }, [db, user]);
+
+  const { data: resources = [] } = useCollection<Resource>(resourcesQuery);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
@@ -156,17 +177,16 @@ export default function Home() {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
   };
 
-  const handleAddResource = (resource: Resource) => {
-    setResources(prev => [resource, ...prev]);
-  };
-
-  const handleDeleteResource = (id: string) => {
-    setResources(prev => prev.filter(r => r.id !== id));
-  };
-
   const handleLogout = () => {
     setIsAuthenticated(false);
     setActiveRole(null);
+  };
+
+  const handleDeleteResource = (id: string) => {
+    if (db) {
+      const resourceRef = doc(db, "educational_resources", id);
+      deleteDocumentNonBlocking(resourceRef);
+    }
   };
 
   const renderDashboard = () => {
@@ -180,13 +200,12 @@ export default function Home() {
           <TeacherDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
+            resources={resources || []} 
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
             onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Parent" })}
             onMarkRead={handleMarkAsRead}
-            onAddResource={handleAddResource}
             onDeleteResource={handleDeleteResource}
           />
         );
@@ -195,7 +214,7 @@ export default function Home() {
           <ParentDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
+            resources={resources || []} 
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
@@ -242,7 +261,7 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      resources={resources}
+      resources={resources || []}
       roster={roster}
     >
       {renderDashboard()}
