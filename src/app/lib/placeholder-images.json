@@ -1,0 +1,35 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-education",
+      "description": "Children learning in a modern classroom environment",
+      "imageUrl": "https://picsum.photos/seed/edu1/1200/800",
+      "imageHint": "classroom learning"
+    },
+    {
+      "id": "teacher-dashboard",
+      "description": "A teacher reviewing digital educational resources",
+      "imageUrl": "https://picsum.photos/seed/edu2/800/600",
+      "imageHint": "teacher technology"
+    },
+    {
+      "id": "parent-app",
+      "description": "A parent looking at child's progress on a phone",
+      "imageUrl": "https://picsum.photos/seed/edu3/800/600",
+      "imageHint": "parenting app"
+    },
+    {
+      "id": "admin-stats",
+      "description": "Data analytics and performance charts for school",
+      "imageUrl": "https://picsum.photos/seed/edu4/800/600",
+      "imageHint": "data analytics"
+    },
+    {
+      "id": "child-drawing",
+      "description": "A colorful drawing by a young child",
+      "imageUrl": "https://picsum.photos/seed/edu5/400/400",
+      "imageHint": "child art"
+    }
+  ]
+}
