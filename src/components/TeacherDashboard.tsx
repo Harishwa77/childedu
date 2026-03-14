@@ -1,8 +1,7 @@
-
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit } from "lucide-react";
+import { useState, useMemo } from "react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,12 @@ import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DashboardTab } from "@/app/page";
+import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
+import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
+import { useToast } from "@/hooks/use-toast";
 
 export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
+  const { toast } = useToast();
   const [resources, setResources] = useState<any[]>([
     {
       id: "1",
@@ -35,6 +38,10 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
   ]);
 
   const [selectedResource, setSelectedResource] = useState<any | null>(null);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
+  const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -49,6 +56,41 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
   const handleNewProcessed = (data: any) => {
     setResources(prev => [data, ...prev]);
     setSelectedResource(data);
+  };
+
+  const handleGenerateLessonPlan = async () => {
+    if (!selectedResource) return;
+    setIsGeneratingPlan(true);
+    setLessonPlan(null);
+    try {
+      const plan = await generateLessonPlan({
+        summary: selectedResource.summary,
+        keyActivities: selectedResource.keyActivities,
+      });
+      setLessonPlan(plan);
+      toast({ title: "Lesson Plan Ready", description: "The AI has created a new curriculum plan based on this resource." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Generation Failed", description: "Could not create lesson plan." });
+    } finally {
+      setIsGeneratingPlan(false);
+    }
+  };
+
+  const handleGenerateMagicMoment = async () => {
+    if (!selectedResource) return;
+    setIsGeneratingVideo(true);
+    setMagicMomentUrl(null);
+    try {
+      const result = await generateMagicMoment({
+        prompt: `Create a heartwarming 5-second animated clip showing: ${selectedResource.summary}. Style: soft watercolors, friendly, early childhood education themed.`,
+      });
+      setMagicMomentUrl(result.videoDataUri);
+      toast({ title: "Magic Moment Generated", description: "A high-quality AI video summary is ready." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Video Failed", description: "Magic Moment generation is currently at capacity." });
+    } finally {
+      setIsGeneratingVideo(false);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -70,7 +112,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-primary text-white border-none overflow-hidden relative">
+            <Card className="bg-primary text-white border-none overflow-hidden relative shadow-lg">
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
@@ -83,7 +125,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-primary" /> Curriculum Status
@@ -100,7 +142,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" /> Student Engagement
@@ -121,7 +163,6 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Processed Resources Tab */}
         {(activeTab === "dashboard" || activeTab === "resources") && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -137,7 +178,11 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                     <Card 
                       key={res.id} 
                       className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group"
-                      onClick={() => setSelectedResource(res)}
+                      onClick={() => {
+                        setSelectedResource(res);
+                        setLessonPlan(null);
+                        setMagicMomentUrl(null);
+                      }}
                     >
                       <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
                         <div className="flex items-center gap-3">
@@ -159,10 +204,6 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-2">
-                          <Clock className="w-3 h-3" />
-                          {new Date(res.timestamp).toLocaleString()}
-                        </div>
                       </CardContent>
                     </Card>
                   ))
@@ -172,7 +213,6 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                       <FileText className="w-8 h-8 text-muted-foreground opacity-20" />
                     </div>
                     <p className="font-headline font-bold text-lg text-muted-foreground">No matching resources</p>
-                    <p className="font-body text-sm text-muted-foreground/60">Try searching for a different keyword or filename.</p>
                   </div>
                 )}
               </div>
@@ -180,7 +220,6 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
           </div>
         )}
 
-        {/* AI Recommendations / Insights Tab */}
         {(activeTab === "dashboard" || activeTab === "insights") && (
           <div className="space-y-6">
             <div className="flex items-center gap-2">
@@ -188,30 +227,27 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
               <h3 className="text-xl font-headline font-bold">Pedagogical Insights</h3>
             </div>
             
-            {activeTab === "insights" && (
-              <Card className="bg-primary/5 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-lg font-headline flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" /> Weekly Skill Trends
-                  </CardTitle>
-                  <CardDescription>AI analysis of classroom data over the last 7 days</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-xl border">
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Growth Area</p>
-                      <p className="text-lg font-bold">Social Cooperation</p>
-                      <p className="text-sm text-emerald-600 font-bold">+24% improvement</p>
-                    </div>
-                    <div className="p-4 bg-white rounded-xl border">
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Focus Needed</p>
-                      <p className="text-lg font-bold">Early Literacy</p>
-                      <p className="text-sm text-orange-600 font-bold">-5% engagement</p>
-                    </div>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" /> Weekly Skill Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-white rounded-xl border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Growth Area</p>
+                    <p className="text-lg font-bold">Social Cooperation</p>
+                    <p className="text-sm text-emerald-600 font-bold">+24% improvement</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <div className="p-4 bg-white rounded-xl border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Focus Needed</p>
+                    <p className="text-lg font-bold">Early Literacy</p>
+                    <p className="text-sm text-orange-600 font-bold">-5% engagement</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="space-y-4">
               <h4 className="text-lg font-headline font-bold flex items-center gap-2">
@@ -221,30 +257,9 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
               <div className="space-y-4">
                 <Card className="bg-accent/5 border-accent/20">
                   <CardContent className="p-6 space-y-4">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
-                          <Badge className="bg-accent">Cognitive</Badge>
-                        </div>
-                        <p className="text-sm font-body text-muted-foreground">Based on recent tactile play observations, introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
-                      </div>
-                      
-                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-headline font-bold text-primary">Cooperative Block Bridge</h4>
-                          <Badge className="bg-accent">Social</Badge>
-                        </div>
-                        <p className="text-sm font-body text-muted-foreground">Utilize the high engagement in block building to create team goals: building a bridge that spans across two tables.</p>
-                      </div>
-
-                      <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-headline font-bold text-primary">Rhythmic Counting</h4>
-                          <Badge className="bg-accent">Math</Badge>
-                        </div>
-                        <p className="text-sm font-body text-muted-foreground">Combine counting exercises with rhythmic clapping to address the challenges observed in pattern recognition today.</p>
-                      </div>
+                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
+                      <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
+                      <p className="text-sm font-body text-muted-foreground">Introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -254,8 +269,13 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
         )}
       </div>
 
-      {/* Resource Study View - Sheet */}
-      <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
+      <Sheet open={!!selectedResource} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedResource(null);
+          setLessonPlan(null);
+          setMagicMomentUrl(null);
+        }
+      }}>
         <SheetContent side="right" className="sm:max-w-xl overflow-y-auto bg-white border-l shadow-2xl">
           {selectedResource && (
             <div className="space-y-8 py-6">
@@ -265,7 +285,7 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                     {getIcon(selectedResource.fileType)}
                   </div>
                   <div>
-                    <SheetTitle className="text-2xl font-headline font-bold text-primary">Study Insights</SheetTitle>
+                    <SheetTitle className="text-2xl font-headline font-bold text-primary">Resource Insights</SheetTitle>
                     <SheetDescription className="font-body text-base">
                       {selectedResource.fileName}
                     </SheetDescription>
@@ -286,7 +306,6 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                 </div>
               </SheetHeader>
 
-              {/* Summary Section */}
               <div className="space-y-3">
                 <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
                   <Sparkles className="w-5 h-5 text-accent" />
@@ -299,42 +318,74 @@ export function TeacherDashboard({ searchQuery, activeTab }: { searchQuery: stri
                 </div>
               </div>
 
-              {/* Key Activities */}
-              <div className="space-y-3">
-                <h4 className="font-headline font-bold text-lg text-foreground">Identified Learning Activities</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedResource.keyActivities?.map((act: string, idx: number) => (
-                    <Badge key={idx} className="bg-primary/10 text-primary border-primary/20 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                      {act}
-                    </Badge>
-                  ))}
+              {magicMomentUrl && (
+                <div className="space-y-3 animate-in fade-in zoom-in duration-500">
+                  <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-primary">
+                    <Video className="w-5 h-5" />
+                    Generated Magic Moment
+                  </h4>
+                  <div className="rounded-2xl overflow-hidden border-4 border-primary/20 shadow-xl bg-black aspect-video">
+                    <video src={magicMomentUrl} controls className="w-full h-full" autoPlay />
+                  </div>
                 </div>
+              )}
+
+              {lessonPlan && (
+                <Card className="border-primary/20 bg-primary/5 animate-in slide-in-from-right-5 duration-500">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-headline text-primary">{lessonPlan.title}</CardTitle>
+                    <CardDescription>Target: 3-5 years</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <p className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Objectives</p>
+                      <ul className="list-disc pl-5 text-sm space-y-1">
+                        {lessonPlan.objectives.map((o, i) => <li key={i}>{o}</li>)}
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Steps</p>
+                      <ol className="list-decimal pl-5 text-sm space-y-2">
+                        {lessonPlan.steps.map((s, i) => <li key={i}>{s}</li>)}
+                      </ol>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="pt-6 grid grid-cols-2 gap-4">
+                <Button 
+                  onClick={handleGenerateLessonPlan} 
+                  disabled={isGeneratingPlan}
+                  variant="outline" 
+                  className="font-headline font-bold gap-2"
+                >
+                  {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-4 h-4" />}
+                  Generate Lesson Plan
+                </Button>
+                <Button 
+                  onClick={handleGenerateMagicMoment}
+                  disabled={isGeneratingVideo}
+                  className="font-headline font-bold bg-accent hover:bg-accent/90 gap-2"
+                >
+                  {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                  Create Magic Moment
+                </Button>
               </div>
 
-              {/* Transcript Section */}
               {selectedResource.transcript && (
-                <div className="space-y-3 pt-4">
+                <div className="space-y-3 pt-4 border-t">
                   <h4 className="font-headline font-bold text-lg flex items-center gap-2 text-foreground">
                     <FileText className="w-5 h-5 text-blue-500" />
-                    Full Transcript
+                    Transcript
                   </h4>
-                  <ScrollArea className="h-64 rounded-2xl border bg-muted/20 p-6">
+                  <ScrollArea className="h-48 rounded-2xl border bg-muted/20 p-6">
                     <p className="font-body text-base leading-relaxed text-muted-foreground whitespace-pre-wrap">
                       {selectedResource.transcript}
                     </p>
                   </ScrollArea>
                 </div>
               )}
-
-              {/* Action Buttons */}
-              <div className="pt-6 grid grid-cols-2 gap-4">
-                <Button variant="outline" className="font-headline font-bold">
-                  Print Report
-                </Button>
-                <Button className="font-headline font-bold bg-primary hover:bg-primary/90">
-                  Add to Lesson Plan
-                </Button>
-              </div>
             </div>
           )}
         </SheetContent>
