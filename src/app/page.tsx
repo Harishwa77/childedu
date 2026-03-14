@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -56,6 +57,7 @@ export interface ChildRegistrationInfo {
 export interface UserMessage {
   id: string;
   from: string;
+  to: string; // "Teacher" or "Parent" or specific name
   subject: string;
   text: string;
   date: string;
@@ -74,8 +76,8 @@ export default function Home() {
   });
 
   const [messages, setMessages] = useState<UserMessage[]>([
-    { id: "m1", from: "Mrs. Johnson", subject: "Leo's Progress", text: "How did the counting activity go today?", date: "10 mins ago", read: false },
-    { id: "m2", from: "Mr. Wong", subject: "Mia's Attendance", text: "Mia will be 30 mins late tomorrow for a dentist appointment.", date: "2 hours ago", read: true },
+    { id: "m1", from: "Mrs. Johnson", to: "Teacher", subject: "Leo's Progress", text: "How did the counting activity go today?", date: "10 mins ago", read: false },
+    { id: "m2", from: "Mr. Wong", to: "Teacher", subject: "Mia's Attendance", text: "Mia will be 30 mins late tomorrow for a dentist appointment.", date: "2 hours ago", read: true },
   ]);
 
   const [resources, setResources] = useState<Resource[]>([
@@ -170,16 +172,21 @@ export default function Home() {
     });
   };
 
-  const handleSendMessageToTeacher = (msg: { subject: string; text: string }) => {
+  const handleSendMessage = (msg: { to: string; subject: string; text: string }) => {
     const newMsg: UserMessage = {
       id: Math.random().toString(36).substring(2, 11),
-      from: `Parent of ${parentSessionInfo.name}`,
+      from: activeRole === "teacher" ? "Teacher" : `Parent of ${parentSessionInfo.name}`,
+      to: msg.to,
       subject: msg.subject,
       text: msg.text,
       date: "Just now",
       read: false
     };
     setMessages(prev => [newMsg, ...prev]);
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
   };
 
   const renderDashboard = () => {
@@ -198,6 +205,8 @@ export default function Home() {
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
+            onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Parent" })}
+            onMarkRead={handleMarkAsRead}
           />
         );
       case "parent":
@@ -209,7 +218,9 @@ export default function Home() {
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
-            onSendMessage={handleSendMessageToTeacher}
+            onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Teacher" })}
+            messages={messages}
+            onMarkRead={handleMarkAsRead}
           />
         );
       case "admin":

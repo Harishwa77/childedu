@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, FileText, Video, Music, Save, CheckCircle2, Lightbulb, Zap, HelpCircle, Layers, BookOpen, Moon, Star, MessageCircle, Send, User, Mail } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,14 @@ import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { generateBedtimeStory, BedtimeStoryOutput } from "@/ai/flows/generate-bedtime-story";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardTab, Resource, ChildRegistrationInfo } from "@/app/page";
+import { DashboardTab, Resource, ChildRegistrationInfo, UserMessage } from "@/app/page";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Student } from "./TeacherDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { TranslationSelector } from "./TranslationSelector";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,9 +34,11 @@ interface ParentDashboardProps {
   childInfo: ChildRegistrationInfo;
   onRegisterChild: (info: ChildRegistrationInfo) => void;
   onSendMessage: (msg: { subject: string; text: string }) => void;
+  messages: UserMessage[];
+  onMarkRead: (id: string) => void;
 }
 
-export function ParentDashboard({ searchQuery, activeTab, resources, roster, childInfo, onRegisterChild, onSendMessage }: ParentDashboardProps) {
+export function ParentDashboard({ searchQuery, activeTab, resources, roster, childInfo, onRegisterChild, onSendMessage, messages, onMarkRead }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -54,6 +58,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
   const childData = useMemo(() => {
     return roster.find(s => s.name.toLowerCase() === childInfo.name.toLowerCase());
   }, [roster, childInfo.name]);
+
+  const parentMessages = useMemo(() => messages.filter(m => m.to === "Parent"), [messages]);
 
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
@@ -120,14 +126,13 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
     if (!messageText.trim()) return;
     setIsMessaging(true);
     
-    // Manual send to teacher - will show in teacher's inbox
     onSendMessage({
       subject: messageSubject || `Regarding ${childInfo.name}`,
       text: messageText
     });
 
     setTimeout(() => {
-      toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}. It will be checked manually by the teacher.` });
+      toast({ title: "Message Sent", description: `Your message has been sent to ${childInfo.mentorName}.` });
       setMessageText("");
       setMessageSubject("");
       setIsMessaging(false);
@@ -175,39 +180,79 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, chi
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 rounded-full border-primary/20">
                 <MessageCircle className="w-4 h-4 text-primary" />
-                Contact Teacher
+                Teacher Center
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">Message {childInfo.mentorName}</DialogTitle>
-                <DialogDescription>Discuss {childInfo.name}'s progress or ask curriculum questions.</DialogDescription>
+                <DialogDescription>Discuss {childInfo.name}'s progress or view replies.</DialogDescription>
               </DialogHeader>
-              <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Input 
-                    placeholder="e.g. Activity Question" 
-                    value={messageSubject}
-                    onChange={(e) => setMessageSubject(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Your Message</Label>
-                  <Textarea 
-                    placeholder="How did the counting activity go today?" 
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    className="min-h-[120px]"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSendMessage} disabled={isMessaging || !messageText.trim()} className="gap-2">
-                  {isMessaging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Send Message
-                </Button>
-              </DialogFooter>
+              <Tabs defaultValue="send">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="send">Send Message</TabsTrigger>
+                  <TabsTrigger value="inbox" className="gap-2">
+                    Inbox {parentMessages.some(m => !m.read) && <Badge className="w-2 h-2 p-0 bg-red-500" />}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="send" className="py-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Subject</Label>
+                    <Input 
+                      placeholder="e.g. Activity Question" 
+                      value={messageSubject}
+                      onChange={(e) => setMessageSubject(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Your Message</Label>
+                    <Textarea 
+                      placeholder="How did the counting activity go today?" 
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      className="min-h-[120px]"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleSendMessage} disabled={isMessaging || !messageText.trim()} className="gap-2 w-full">
+                      {isMessaging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      Send Message
+                    </Button>
+                  </DialogFooter>
+                </TabsContent>
+                <TabsContent value="inbox" className="py-4">
+                  <ScrollArea className="h-[300px] rounded-lg border p-4 bg-muted/10">
+                    <div className="space-y-4">
+                      {parentMessages.length > 0 ? parentMessages.map((msg) => (
+                        <Card key={msg.id} className={cn("border-accent/10", !msg.read && "border-l-4 border-l-primary bg-primary/5")}>
+                          <CardHeader className="p-4 pb-2">
+                            <div className="flex justify-between items-center">
+                              <p className="font-bold text-sm flex items-center gap-2 text-primary">
+                                <School className="w-3 h-3" /> Teacher Reply
+                              </p>
+                              <span className="text-[10px] text-muted-foreground">{msg.date}</span>
+                            </div>
+                            <CardTitle className="text-xs mt-1">{msg.subject}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground font-body">{msg.text}</p>
+                          </CardContent>
+                          {!msg.read && (
+                            <CardFooter className="p-4 pt-0 flex justify-end">
+                              <Button variant="ghost" size="sm" onClick={() => onMarkRead(msg.id)}>Mark as Read</Button>
+                            </CardFooter>
+                          )}
+                        </Card>
+                      )) : (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <Mail className="w-8 h-8 mx-auto opacity-20 mb-2" />
+                          <p>No messages yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
 
