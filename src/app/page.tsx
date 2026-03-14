@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
-import { DashboardTab, DashboardLayout } from "@/components/DashboardLayout";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { TeacherDashboard, Student } from "@/components/TeacherDashboard";
 import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
@@ -186,6 +186,7 @@ export default function Home() {
     <DashboardLayout 
       role={activeRole} 
       onLogout={() => setActiveRole(null)}
+      onRoleSwitch={(role) => setActiveRole(role)}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       activeTab={activeTab}

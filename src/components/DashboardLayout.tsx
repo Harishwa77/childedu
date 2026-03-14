@@ -1,18 +1,20 @@
 "use client";
 
 import { ReactNode } from "react";
-import { LogOut, Bell, Search, UserCircle, GraduationCap } from "lucide-react";
+import { LogOut, Bell, Search, UserCircle, GraduationCap, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
 import { DashboardTab, Resource } from "@/app/page";
 import { Student } from "./TeacherDashboard";
+import { Role } from "./RoleSelector";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
   role: string;
   onLogout: () => void;
+  onRoleSwitch?: (role: Role) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   activeTab: DashboardTab;
@@ -25,6 +27,7 @@ export function DashboardLayout({
   children, 
   role, 
   onLogout, 
+  onRoleSwitch,
   searchQuery, 
   onSearchChange,
   activeTab,
@@ -98,6 +101,30 @@ export function DashboardLayout({
             />
           </div>
           
+          {role === "teacher" && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onRoleSwitch?.("parent")}
+              className="hidden lg:flex gap-2 border-primary/20 text-primary hover:bg-primary/5 h-9 rounded-full px-4"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              Parent View
+            </Button>
+          )}
+
+          {role === "parent" && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onRoleSwitch?.("teacher")}
+              className="hidden lg:flex gap-2 border-accent/20 text-accent hover:bg-accent/5 h-9 rounded-full px-4"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              Teacher View
+            </Button>
+          )}
+
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
