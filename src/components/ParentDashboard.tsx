@@ -1,16 +1,20 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from "@/ai/flows/generate-parental-learning-insights";
+import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export function ParentDashboard() {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchInsights() {
@@ -30,6 +34,30 @@ export function ParentDashboard() {
     fetchInsights();
   }, []);
 
+  const handleListen = async () => {
+    if (!insights || isSpeaking) return;
+    
+    setIsSpeaking(true);
+    try {
+      const res = await textToSpeech({
+        text: insights.learningSummary,
+        voiceName: "Algenib"
+      });
+      
+      const audio = new Audio(res.audioDataUri);
+      audio.onended = () => setIsSpeaking(false);
+      audio.play();
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Audio Error",
+        description: "Could not generate audio summary."
+      });
+      setIsSpeaking(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
       <div className="flex items-center justify-between">
@@ -47,10 +75,23 @@ export function ParentDashboard() {
         {/* Learning Summary */}
         <Card className="border-none shadow-lg overflow-hidden flex flex-col">
           <CardHeader className="bg-primary text-white p-6">
-            <CardTitle className="font-headline text-2xl flex items-center gap-2">
-              <Sparkles className="w-6 h-6" /> Classroom Insight
-            </CardTitle>
-            <CardDescription className="text-white/80 font-body">AI-generated summary of Leo's week</CardDescription>
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                  <Sparkles className="w-6 h-6" /> Classroom Insight
+                </CardTitle>
+                <CardDescription className="text-white/80 font-body">AI-generated summary of Leo's week</CardDescription>
+              </div>
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="rounded-full bg-white/20 hover:bg-white/30 text-white"
+                onClick={handleListen}
+                disabled={isLoading || isSpeaking}
+              >
+                {isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-6 flex-1 bg-white">
             {isLoading ? (

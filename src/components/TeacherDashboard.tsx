@@ -1,13 +1,16 @@
-
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, Sparkles, Loader2, Play } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { UploadModal } from "./UploadModal";
 import { TranslationSelector } from "./TranslationSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
+import { useToast } from "@/hooks/use-toast";
 
 export function TeacherDashboard() {
   const [resources, setResources] = useState<any[]>([
@@ -29,8 +32,37 @@ export function TeacherDashboard() {
     }
   ]);
 
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
+  const { toast } = useToast();
+
   const handleNewProcessed = (data: any) => {
     setResources(prev => [data, ...prev]);
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!videoPrompt.trim()) return;
+    
+    setIsGeneratingVideo(true);
+    setGeneratedVideo(null);
+    try {
+      const res = await generateMagicMoment({ prompt: videoPrompt });
+      setGeneratedVideo(res.videoDataUri);
+      toast({
+        title: "Magic Moment Created!",
+        description: "Your AI-generated educational video is ready."
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Veo is currently busy or rate-limited. Please try again."
+      });
+    } finally {
+      setIsGeneratingVideo(false);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -97,6 +129,36 @@ export function TeacherDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Magic Moments Video Generation Section */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary" /> Create a Magic Moment
+          </CardTitle>
+          <CardDescription className="font-body">Generate short educational videos for your class using AI.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex gap-4">
+            <Input 
+              placeholder="e.g., A group of cartoon animals learning about gravity with falling apples..."
+              value={videoPrompt}
+              onChange={(e) => setVideoPrompt(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={handleGenerateVideo} disabled={isGeneratingVideo || !videoPrompt.trim()}>
+              {isGeneratingVideo ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+              Generate
+            </Button>
+          </div>
+          
+          {generatedVideo && (
+            <div className="aspect-video w-full max-w-2xl mx-auto rounded-xl overflow-hidden border shadow-xl">
+              <video src={generatedVideo} controls className="w-full h-full object-cover" autoPlay loop />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Resources */}
