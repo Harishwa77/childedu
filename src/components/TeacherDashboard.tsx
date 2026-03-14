@@ -1,24 +1,19 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, ChevronRight, Sparkles, BrainCircuit, FilePlus, Loader2, CheckCircle2, XCircle, UserCheck, PlusCircle, Save, User, Target, Layers, MessageCircle, Mail, Send, Reply, Trash2, Filter } from "lucide-react";
+import { Users, Star, UserCheck, PlusCircle, Save, School, Mail, Send, Reply, MessageCircle, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UploadModal } from "./UploadModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { DashboardTab, Resource, UserMessage } from "@/app/types";
-import { generateLessonPlan, type LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
+import { DashboardTab, UserMessage } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { TranslationSelector } from "./TranslationSelector";
 import { cn } from "@/lib/utils";
 
 export interface Student {
@@ -41,9 +36,6 @@ export interface Student {
 interface TeacherDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
-  resources: Resource[];
-  onAddResource: (res: Resource) => void;
-  onDeleteResource: (id: string) => void;
   roster: Student[];
   setRoster: React.Dispatch<React.SetStateAction<Student[]>>;
   messages: UserMessage[];
@@ -54,9 +46,6 @@ interface TeacherDashboardProps {
 export function TeacherDashboard({ 
   searchQuery, 
   activeTab, 
-  resources, 
-  onAddResource,
-  onDeleteResource,
   roster, 
   setRoster, 
   messages, 
@@ -64,10 +53,6 @@ export function TeacherDashboard({
   onMarkRead 
 }: TeacherDashboardProps) {
   const { toast } = useToast();
-  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-  const [lessonPlan, setLessonPlan] = useState<LessonPlanOutput | null>(null);
-  const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
   
   const [milestoneEntryStudent, setMilestoneEntryStudent] = useState<Student | null>(null);
   const [tempSkills, setTempSkills] = useState({ language: 50, numeracy: 50, social: 50, motor: 50 });
@@ -76,15 +61,6 @@ export function TeacherDashboard({
   const [replyText, setReplyText] = useState("");
 
   const teacherMessages = useMemo(() => messages.filter(m => m.to === "Teacher"), [messages]);
-
-  const filteredResources = useMemo(() => {
-    if (!searchQuery.trim()) return resources;
-    const query = searchQuery.toLowerCase();
-    return resources.filter(res => 
-      res.fileName.toLowerCase().includes(query) ||
-      res.summary.toLowerCase().includes(query)
-    );
-  }, [resources, searchQuery]);
 
   const toggleAttendance = (id: string) => {
     setRoster(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
@@ -113,24 +89,6 @@ export function TeacherDashboard({
     toast({ title: "Milestones Updated", description: `Developmental scores for ${milestoneEntryStudent.name} have been updated.` });
   };
 
-  const handleGenerateLessonPlan = async () => {
-    if (!selectedResource) return;
-    setIsGeneratingPlan(true);
-    try {
-      const plan = await generateLessonPlan({
-        summary: selectedResource.summary,
-        keyActivities: selectedResource.keyActivities,
-        language: planLanguage,
-      });
-      setLessonPlan(plan);
-      toast({ title: "Lesson Plan Ready", description: `A new curriculum plan has been created in ${planLanguage}.` });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Generation Failed", description: "Could not create lesson plan." });
-    } finally {
-      setIsGeneratingPlan(false);
-    }
-  };
-
   const handleSendReply = () => {
     if (!replyText.trim() || !replyingTo) return;
     onSendMessage({
@@ -143,19 +101,6 @@ export function TeacherDashboard({
     setReplyText("");
   };
 
-  const handleDeleteResource = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDeleteResource(id);
-    setSelectedResource(null);
-    toast({ title: "Resource Deleted", description: "The resource has been removed from your portal." });
-  };
-
-  const getIcon = (type: string) => {
-    if (type.includes("video") || type.includes("youtube")) return <Video className="w-5 h-5 text-purple-600" />;
-    if (type.includes("audio")) return <Music className="w-5 h-5 text-blue-600" />;
-    return <FileText className="w-5 h-5 text-emerald-600" />;
-  };
-
   const getEngagementBadge = (level: string) => {
     switch (level) {
       case "High": return <Badge className="bg-emerald-100 text-emerald-700 border-none">High Engagement</Badge>;
@@ -166,42 +111,10 @@ export function TeacherDashboard({
 
   const unreadMessagesCount = teacherMessages.filter(m => !m.read).length;
 
-  const ResourceList = ({ items }: { items: Resource[] }) => (
-    <div className="space-y-4">
-      {items.length > 0 ? items.map((res) => (
-        <Card key={res.id} className="border-accent/10 hover:border-primary/20 transition-all shadow-sm cursor-pointer group" onClick={() => setSelectedResource(res)}>
-          <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">{getIcon(res.fileType)}</div>
-              <div className="flex flex-col">
-                 <CardTitle className="text-sm font-semibold truncate max-w-[200px]">{res.fileName}</CardTitle>
-                 {res.aiContent && <Badge variant="secondary" className="h-4 text-[8px] mt-1">{res.aiContent.targetAge}</Badge>}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDeleteResource(res.id, e)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-3">
-            <p className="text-sm text-muted-foreground font-body italic line-clamp-2">"{res.summary}"</p>
-          </CardContent>
-        </Card>
-      )) : (
-        <div className="text-center py-12 opacity-40">
-          <Filter className="w-8 h-8 mx-auto mb-2" />
-          <p className="text-sm font-body">No resources in this format.</p>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {activeTab === "dashboard" && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-primary text-white border-none overflow-hidden relative shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-headline flex items-center gap-2">
@@ -210,16 +123,6 @@ export function TeacherDashboard({
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold font-headline">Sensory Play & Art</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-primary" /> Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold">85%</p>
             </CardContent>
           </Card>
           <Card className="shadow-sm">
@@ -247,86 +150,62 @@ export function TeacherDashboard({
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-        <UploadModal onUpload={onAddResource} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <Tabs defaultValue="resources" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="resources" className="gap-2"><Layers className="w-4 h-4" /> Resources</TabsTrigger>
-              <TabsTrigger value="messages" className="gap-2"><MessageCircle className="w-4 h-4" /> Parent Inbox</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="resources" className="pt-4 space-y-4">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 h-8 text-[10px] bg-muted/30">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="video">Videos</TabsTrigger>
-                  <TabsTrigger value="audio">Audio</TabsTrigger>
-                  <TabsTrigger value="docs">Docs</TabsTrigger>
-                </TabsList>
-                <ScrollArea className="h-[460px] rounded-xl border bg-white p-4 mt-4">
-                  <TabsContent value="all" className="m-0">
-                    <ResourceList items={filteredResources} />
-                  </TabsContent>
-                  <TabsContent value="video" className="m-0">
-                    <ResourceList items={filteredResources.filter(r => r.fileType.includes("video") || r.fileType.includes("youtube"))} />
-                  </TabsContent>
-                  <TabsContent value="audio" className="m-0">
-                    <ResourceList items={filteredResources.filter(r => r.fileType.includes("audio"))} />
-                  </TabsContent>
-                  <TabsContent value="docs" className="m-0">
-                    <ResourceList items={filteredResources.filter(r => !r.fileType.includes("video") && !r.fileType.includes("audio") && !r.fileType.includes("youtube"))} />
-                  </TabsContent>
-                </ScrollArea>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="messages" className="pt-4">
-              <ScrollArea className="h-[500px] rounded-xl border bg-white p-4">
-                <div className="space-y-4">
-                  {teacherMessages.length > 0 ? teacherMessages.map((msg) => (
-                    <Card key={msg.id} className={cn("hover:bg-accent/5 transition-colors border-accent/10", !msg.read && "border-l-4 border-l-primary bg-primary/5")}>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center"><User className="w-4 h-4 text-accent" /></div>
-                            <p className="font-bold text-sm">{msg.from}</p>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground">{msg.date}</span>
+          <Card className="border-none shadow-sm overflow-hidden h-[500px] flex flex-col">
+            <CardHeader className="bg-muted/50 pb-4">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <CardTitle className="font-headline text-xl">Parent Inbox</CardTitle>
+              </div>
+            </CardHeader>
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {teacherMessages.length > 0 ? teacherMessages.map((msg) => (
+                  <Card key={msg.id} className={cn("hover:bg-accent/5 transition-colors border-accent/10", !msg.read && "border-l-4 border-l-primary bg-primary/5")}>
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center"><Users className="w-4 h-4 text-accent" /></div>
+                          <p className="font-bold text-sm">{msg.from}</p>
                         </div>
-                        <CardTitle className="text-xs mt-2">{msg.subject}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground font-body">{msg.text}</p>
-                      </CardContent>
-                      <CardFooter className="p-4 pt-0 flex justify-end">
-                        <Button variant="ghost" size="sm" className="gap-2 text-primary" onClick={() => setReplyingTo(msg)}>
-                          <Reply className="w-4 h-4" />
-                          Reply
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  )) : (
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 opacity-60 py-12">
-                      <Mail className="w-12 h-12" />
-                      <p className="font-headline text-lg">Your inbox is empty</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+                        <span className="text-[10px] text-muted-foreground">{msg.date}</span>
+                      </div>
+                      <CardTitle className="text-xs mt-2">{msg.subject}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground font-body">{msg.text}</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex justify-end">
+                      <Button variant="ghost" size="sm" className="gap-2 text-primary" onClick={() => setReplyingTo(msg)}>
+                        <Reply className="w-4 h-4" />
+                        Reply
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )) : (
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 opacity-60 py-12">
+                    <Mail className="w-12 h-12" />
+                    <p className="font-headline text-lg">Your inbox is empty</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </Card>
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-xl font-headline font-bold flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" /> Classroom Roster
-          </h3>
           <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/50 pb-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                <CardTitle className="font-headline text-xl">Classroom Roster</CardTitle>
+              </div>
+            </CardHeader>
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="font-headline">Student</TableHead>
                   <TableHead className="font-headline">Actions</TableHead>
@@ -385,148 +264,6 @@ export function TeacherDashboard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
-        <SheetContent side="right" className="sm:max-w-2xl overflow-y-auto bg-white border-l shadow-2xl p-0">
-          {selectedResource && (
-            <div className="flex flex-col h-full">
-              <div className="p-6 border-b bg-primary/5">
-                <div className="flex items-center justify-between mb-4">
-                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-white rounded-2xl shadow-sm">
-                      {getIcon(selectedResource.fileType)}
-                    </div>
-                    <div>
-                      <SheetTitle className="text-2xl font-headline font-bold text-primary">{selectedResource.fileName}</SheetTitle>
-                      <div className="flex gap-2 mt-1">
-                        <Badge className="bg-primary/20 text-primary border-none">{selectedResource.aiContent?.targetAge || "All Ages"}</Badge>
-                        <Badge className="bg-emerald-100 text-emerald-700 border-none">AI Analyzed</Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="destructive" size="sm" className="gap-2" onClick={(e) => handleDeleteResource(selectedResource.id, e)}>
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex-1 p-6">
-                <Tabs defaultValue="knowledge" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-muted/30">
-                    <TabsTrigger value="knowledge">Knowledge Map</TabsTrigger>
-                    <TabsTrigger value="study">Study Kit</TabsTrigger>
-                    <TabsTrigger value="lesson">AI Actions</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="knowledge" className="pt-6 space-y-6">
-                    <div className="p-4 bg-accent/5 border border-accent/10 rounded-xl space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-headline font-bold text-lg flex items-center gap-2">
-                          <BrainCircuit className="w-5 h-5 text-accent" /> Semantic Connections
-                        </h4>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                          <Target className="w-5 h-5 text-red-500 mt-1" />
-                          <div className="flex-1">
-                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Curriculum Objectives</p>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {selectedResource.aiContent?.curriculumObjectives?.map((obj, i) => (
-                                <Badge key={i} variant="outline" className="text-[10px] bg-white">{obj}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <Separator />
-                        <div className="flex items-start gap-3">
-                          <PlusCircle className="w-5 h-5 text-emerald-500 mt-1" />
-                          <div className="flex-1">
-                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Skills Mapped</p>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {selectedResource.aiContent?.skillsMapped?.map((skill, i) => (
-                                <Badge key={i} className="bg-emerald-50 text-emerald-700 border-none text-[10px]">{skill}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Pedagogical Summary</h4>
-                        <TranslationSelector 
-                          content={selectedResource.aiContent?.summary || selectedResource.summary} 
-                          onTranslate={(val) => {
-                            if (selectedResource.aiContent) {
-                              setSelectedResource({
-                                ...selectedResource,
-                                aiContent: { ...selectedResource.aiContent, summary: val }
-                              });
-                            } else {
-                              setSelectedResource({ ...selectedResource, summary: val });
-                            }
-                          }} 
-                        />
-                      </div>
-                      <p className="text-sm font-body leading-relaxed italic">"{selectedResource.aiContent?.summary || selectedResource.summary}"</p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="study" className="pt-6 space-y-6">
-                    <div className="space-y-4">
-                      <h4 className="font-headline font-bold text-lg">Key Concepts</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedResource.aiContent?.keyConcepts?.map((concept, i) => (
-                          <Badge key={i} variant="secondary" className="px-3 py-1 bg-primary/5 text-primary border-none">{concept}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className="space-y-4">
-                      <h4 className="font-headline font-bold text-lg">Interactive Flashcards</h4>
-                      <div className="grid gap-4">
-                        {selectedResource.aiContent?.flashcards?.map((card, i) => (
-                          <Card key={i} className="p-4 bg-muted/20 border-none hover:bg-muted/40 transition-colors cursor-pointer group">
-                             <p className="text-xs font-bold text-primary mb-1">Q: {card.question}</p>
-                             <p className="text-sm font-body opacity-0 group-hover:opacity-100 transition-opacity">A: {card.answer}</p>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="lesson" className="pt-6 space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <Button className="w-full gap-2 h-12" onClick={handleGenerateLessonPlan} disabled={isGeneratingPlan}>
-                        {isGeneratingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus className="w-5 h-5" />}
-                        Generate Structural Lesson Plan
-                      </Button>
-                    </div>
-                    {lessonPlan && (
-                      <Card className="mt-4 border-primary/20 bg-primary/5">
-                        <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-                          <CardTitle className="text-lg font-headline">{lessonPlan.title}</CardTitle>
-                          <TranslationSelector 
-                            content={`${lessonPlan.title}\n\n${lessonPlan.steps.join('\n')}`} 
-                            onTranslate={(val) => {
-                              const lines = val.split('\n');
-                              setLessonPlan({ ...lessonPlan, title: lines[0], steps: lines.slice(2) });
-                            }} 
-                          />
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0 space-y-3">
-                           <p className="text-sm font-body leading-relaxed">{lessonPlan.steps[0]}...</p>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
 
       <Dialog open={!!milestoneEntryStudent} onOpenChange={(open) => !open && setMilestoneEntryStudent(null)}>
         <DialogContent>

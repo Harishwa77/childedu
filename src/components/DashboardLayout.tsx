@@ -5,7 +5,7 @@ import { LogOut, Bell, Search, UserCircle, Gamepad2, ArrowRightLeft } from "luci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AIAssistant } from "./AIAssistant";
-import { DashboardTab, Resource } from "@/app/types";
+import { DashboardTab } from "@/app/types";
 import { Student } from "./TeacherDashboard";
 import { Role } from "./RoleSelector";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,6 @@ interface DashboardLayoutProps {
   onSearchChange: (query: string) => void;
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
-  resources: Resource[];
   roster: Student[];
 }
 
@@ -32,7 +31,6 @@ export function DashboardLayout({
   onSearchChange,
   activeTab,
   onTabChange,
-  resources,
   roster
 }: DashboardLayoutProps) {
   return (
@@ -58,26 +56,6 @@ export function DashboardLayout({
             </Button>
             <Button 
               variant="ghost" 
-              onClick={() => onTabChange("resources")}
-              className={cn(
-                "text-sm font-medium transition-colors",
-                activeTab === "resources" ? "text-primary bg-primary/5" : "text-muted-foreground"
-              )}
-            >
-              Resources
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => onTabChange("insights")}
-              className={cn(
-                "text-sm font-medium transition-colors",
-                activeTab === "insights" ? "text-primary bg-primary/5" : "text-muted-foreground"
-              )}
-            >
-              Insights
-            </Button>
-            <Button 
-              variant="ghost" 
               onClick={() => onTabChange("magic-games")}
               className={cn(
                 "text-sm font-medium transition-colors gap-2",
@@ -94,7 +72,7 @@ export function DashboardLayout({
           <div className="relative hidden sm:block">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
-              placeholder="Search resources..." 
+              placeholder="Search..." 
               className="w-64 pl-9 bg-accent/5 border-none focus-visible:ring-1" 
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -150,7 +128,8 @@ export function DashboardLayout({
         {children}
       </main>
 
-      <AIAssistant resources={resources} roster={roster} />
+      {/* AI Assistant - updated to pass empty resources since they are removed */}
+      <AIAssistant resources={[]} roster={roster} />
     </div>
   );
 }

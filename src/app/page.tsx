@@ -11,7 +11,6 @@ import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
 import { 
   DashboardTab, 
-  Resource, 
   ChildRegistrationInfo, 
   UserMessage 
 } from "@/app/types";
@@ -21,9 +20,6 @@ export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Local state for resources
-  const [resources, setResources] = useState<Resource[]>([]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
@@ -69,14 +65,6 @@ export default function Home() {
     { id: "s4", name: "Ava Garcia", present: true, engagement: "High", skills: { language: 88, numeracy: 95, social: 82, motor: 75 } },
     { id: "s5", name: "Liam Chen", present: true, engagement: "High", skills: { language: 75, numeracy: 80, social: 88, motor: 92 } },
   ]);
-
-  const handleAddResource = (res: Resource) => {
-    setResources(prev => [res, ...prev]);
-  };
-
-  const handleDeleteResource = (id: string) => {
-    setResources(prev => prev.filter(r => r.id !== id));
-  };
 
   const handleRegisterChild = (info: ChildRegistrationInfo) => {
     setParentSessionInfo(info);
@@ -131,9 +119,6 @@ export default function Home() {
           <TeacherDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
-            onAddResource={handleAddResource}
-            onDeleteResource={handleDeleteResource}
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
@@ -146,7 +131,6 @@ export default function Home() {
           <ParentDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources} 
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
@@ -193,7 +177,6 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      resources={resources}
       roster={roster}
     >
       {renderDashboard()}
