@@ -39,7 +39,7 @@ const SummarizeMultimodalContentOutputSchema = z.object({
     .string()
     .optional()
     .describe(
-      'The transcription of the audio/video content, if applicable.'
+      'A full, verbatim transcription of any spoken dialogue in the audio or video track.'
     ),
 });
 export type SummarizeMultimodalContentOutput = z.infer<
@@ -59,16 +59,16 @@ const summarizePrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: SummarizeMultimodalContentInputSchema},
   output: {schema: SummarizeMultimodalContentOutputSchema},
-  prompt: `You are an expert AI assistant specialized in educational content analysis for early childhood development.
+  prompt: `You are an expert AI assistant specialized in educational content analysis.
 You have been provided with a file of type: {{{contentType}}}.
 
 Please analyze the following content:
 {{media url=contentDataUri}}
 
 Tasks:
-1. Provide a concise summary of what is happening in the content, focusing on educational value.
-2. Identify and list 3-5 key teaching or learning activities demonstrated (e.g., social interaction, tactile play, numeracy, literacy, creative expression).
-3. If the content is an audio or video file, provide a clean transcript of any spoken words.
+1. SUMMARY: Provide a concise summary of the visual and auditory events. Focus on educational value and the interactions taking place.
+2. ACTIVITIES: Identify and list 3-5 key teaching or learning activities demonstrated (e.g., social interaction, tactile play, numeracy, literacy, creative expression).
+3. TRANSCRIPT (CRITICAL): If the content is an audio or video file with spoken dialogue, provide a FULL, VERBATIM transcript of all spoken words. Please label speakers if possible (e.g., "Teacher:", "Child:", "Unknown:"). If there is no speech in the audio track, clearly state "No spoken dialogue detected."
 
 Ensure your response follows the requested JSON structure precisely.`,
 });
