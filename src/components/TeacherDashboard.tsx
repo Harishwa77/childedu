@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -43,24 +42,26 @@ interface TeacherDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
   resources: Resource[];
+  onAddResource: (res: Resource) => void;
+  onDeleteResource: (id: string) => void;
   roster: Student[];
   setRoster: React.Dispatch<React.SetStateAction<Student[]>>;
   messages: UserMessage[];
   onSendMessage: (msg: { subject: string; text: string }) => void;
   onMarkRead: (id: string) => void;
-  onDeleteResource: (id: string) => void;
 }
 
 export function TeacherDashboard({ 
   searchQuery, 
   activeTab, 
   resources, 
+  onAddResource,
+  onDeleteResource,
   roster, 
   setRoster, 
   messages, 
   onSendMessage, 
-  onMarkRead,
-  onDeleteResource
+  onMarkRead 
 }: TeacherDashboardProps) {
   const { toast } = useToast();
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
@@ -87,18 +88,6 @@ export function TeacherDashboard({
 
   const toggleAttendance = (id: string) => {
     setRoster(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
-  };
-
-  const handleDeleteResource = (resourceId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (confirm("Are you sure you want to delete this resource permanently?")) {
-      onDeleteResource(resourceId);
-      setSelectedResource(null);
-      toast({
-        title: "Resource Deleted",
-        description: "The resource has been permanently removed from the database."
-      });
-    }
   };
 
   const handleSaveMilestones = () => {
@@ -152,6 +141,13 @@ export function TeacherDashboard({
     toast({ title: "Reply Sent", description: "Your message has been sent to the parent." });
     setReplyingTo(null);
     setReplyText("");
+  };
+
+  const handleDeleteResource = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDeleteResource(id);
+    setSelectedResource(null);
+    toast({ title: "Resource Deleted", description: "The resource has been removed from your portal." });
   };
 
   const getIcon = (type: string) => {
@@ -251,7 +247,7 @@ export function TeacherDashboard({
 
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
-        <UploadModal />
+        <UploadModal onUpload={onAddResource} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -408,7 +404,7 @@ export function TeacherDashboard({
                       </div>
                     </div>
                   </div>
-                  <Button variant="destructive" size="sm" className="gap-2" onClick={() => handleDeleteResource(selectedResource.id)}>
+                  <Button variant="destructive" size="sm" className="gap-2" onClick={(e) => handleDeleteResource(selectedResource.id, e)}>
                     <Trash2 className="w-4 h-4" /> Delete
                   </Button>
                 </div>

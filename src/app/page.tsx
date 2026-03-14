@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { RoleSelector, Role } from "@/components/RoleSelector";
 import { LoginPage } from "@/components/LoginPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -10,10 +9,6 @@ import { ParentDashboard } from "@/components/ParentDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { KinderLearningHub } from "@/components/KinderLearningHub";
 import { Toaster } from "@/components/ui/toaster";
-import { useUser, useFirestore, useAuth, useMemoFirebase, useCollection } from "@/firebase";
-import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
-import { collection, doc } from "firebase/firestore";
-import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export type DashboardTab = "dashboard" | "resources" | "insights" | "learning-hub";
 
@@ -51,7 +46,6 @@ export interface Resource {
   analysis?: ResourceAnalysis;
   targetStudentId?: string;
   aiContent?: AILessonContent;
-  uploaderId?: string;
 }
 
 export interface ChildRegistrationInfo {
@@ -71,29 +65,13 @@ export interface UserMessage {
 }
 
 export default function Home() {
-  const { user, isUserLoading } = useUser();
-  const db = useFirestore();
-  const auth = useAuth();
-  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Firebase Auth initialization
-  useEffect(() => {
-    if (!isUserLoading && !user && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
-
-  // Firestore Data fetching
-  const resourcesQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return collection(db, "educational_resources");
-  }, [db, user]);
-
-  const { data: resources = [] } = useCollection<Resource>(resourcesQuery);
+  // Local state for resources (Replaces Firestore for this request)
+  const [resources, setResources] = useState<Resource[]>([]);
 
   const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
     name: "Leo Johnson",
@@ -140,6 +118,14 @@ export default function Home() {
     { id: "s5", name: "Liam Chen", present: true, engagement: "High", skills: { language: 75, numeracy: 80, social: 88, motor: 92 } },
   ]);
 
+  const handleAddResource = (res: Resource) => {
+    setResources(prev => [res, ...prev]);
+  };
+
+  const handleDeleteResource = (id: string) => {
+    setResources(prev => prev.filter(r => r.id !== id));
+  };
+
   const handleRegisterChild = (info: ChildRegistrationInfo) => {
     setParentSessionInfo(info);
     setRoster(prev => {
@@ -182,13 +168,6 @@ export default function Home() {
     setActiveRole(null);
   };
 
-  const handleDeleteResource = (id: string) => {
-    if (db) {
-      const resourceRef = doc(db, "educational_resources", id);
-      deleteDocumentNonBlocking(resourceRef);
-    }
-  };
-
   const renderDashboard = () => {
     if (activeTab === "learning-hub") {
       return <KinderLearningHub />;
@@ -200,13 +179,14 @@ export default function Home() {
           <TeacherDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources || []} 
+            resources={resources} 
+            onAddResource={handleAddResource}
+            onDeleteResource={handleDeleteResource}
             roster={roster} 
             setRoster={setRoster}
             messages={messages}
             onSendMessage={(msg) => handleSendMessage({ ...msg, to: "Parent" })}
             onMarkRead={handleMarkAsRead}
-            onDeleteResource={handleDeleteResource}
           />
         );
       case "parent":
@@ -214,7 +194,7 @@ export default function Home() {
           <ParentDashboard 
             searchQuery={searchQuery} 
             activeTab={activeTab} 
-            resources={resources || []} 
+            resources={resources} 
             roster={roster} 
             childInfo={parentSessionInfo} 
             onRegisterChild={handleRegisterChild}
@@ -261,7 +241,7 @@ export default function Home() {
       onSearchChange={setSearchQuery}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      resources={resources || []}
+      resources={resources}
       roster={roster}
     >
       {renderDashboard()}

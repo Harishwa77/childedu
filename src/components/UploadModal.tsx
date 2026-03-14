@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef } from "react";
@@ -13,11 +12,12 @@ import { summarizeYoutubeLink } from "@/ai/flows/summarize-youtube-link";
 import { voiceToLesson } from "@/ai/flows/voice-to-lesson-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Resource } from "@/app/page";
-import { useFirestore, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
-export function UploadModal() {
+interface UploadModalProps {
+  onUpload: (res: Resource) => void;
+}
+
+export function UploadModal({ onUpload }: UploadModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -30,8 +30,6 @@ export function UploadModal() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
-  const db = useFirestore();
-  const { user } = useUser();
 
   const startRecording = async () => {
     try {
@@ -66,27 +64,6 @@ export function UploadModal() {
       setIsRecording(false);
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
-  };
-
-  const saveToFirestore = (resource: Resource) => {
-    if (!db || !user) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please wait while we establish a secure connection."
-      });
-      return;
-    }
-
-    const resourceRef = doc(db, "educational_resources", resource.id);
-    const dataToSave = {
-      ...resource,
-      uploaderId: user.uid,
-      authorizedUids: { [user.uid]: true },
-      createdAt: new Date().toISOString(),
-    };
-
-    setDocumentNonBlocking(resourceRef, dataToSave, { merge: true });
   };
 
   const handleVoiceSubmit = async () => {
@@ -134,7 +111,7 @@ export function UploadModal() {
           }
         };
 
-        saveToFirestore(resourceData);
+        onUpload(resourceData);
 
         setTimeout(() => {
           setIsOpen(false);
@@ -213,7 +190,7 @@ export function UploadModal() {
             timestamp: new Date().toISOString()
           };
 
-          saveToFirestore(resourceData);
+          onUpload(resourceData);
 
           setTimeout(() => {
             setIsOpen(false);
@@ -268,7 +245,7 @@ export function UploadModal() {
         timestamp: new Date().toISOString()
       };
 
-      saveToFirestore(resourceData);
+      onUpload(resourceData);
 
       setTimeout(() => {
         setIsOpen(false);
@@ -304,10 +281,9 @@ export function UploadModal() {
       <DialogTrigger asChild>
         <Button 
           className="gap-2 h-11 px-6 shadow-md hover:shadow-lg transition-all font-headline text-base bg-primary"
-          disabled={!user}
         >
-          {!user ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-5 h-5" />}
-          {!user ? "Establishing Session..." : "Add Resource"}
+          <Upload className="w-5 h-5" />
+          Add Resource
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
