@@ -1,16 +1,15 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Background: #EFF3F5 */
-    --background: 200 20% 95%;
+    /* Background: Soft warm cream #FFFBEB */
+    --background: 45 100% 98%;
     --foreground: 200 40% 10%;
     
-    /* Primary: #237EC3 */
-    --primary: 206 70% 45%;
+    /* Primary: Playful Sky Blue #38BDF8 */
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
     
     /* Card & Popover */
@@ -19,39 +18,39 @@
     --popover: 0 0% 100%;
     --popover-foreground: 200 40% 10%;
     
-    /* Secondary: Muted version of Primary */
-    --secondary: 206 20% 90%;
-    --secondary-foreground: 206 70% 30%;
+    /* Secondary: Sunny Yellow #FBBF24 */
+    --secondary: 43 96% 64%;
+    --secondary-foreground: 43 96% 20%;
     
-    /* Accent: #299692 (Turquoise) */
-    --accent: 178 57% 37%;
+    /* Accent: Coral Orange #FB7185 */
+    --accent: 353 96% 70%;
     --accent-foreground: 0 0% 100%;
     
-    --muted: 200 10% 90%;
+    --muted: 200 10% 92%;
     --muted-foreground: 200 10% 40%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 200 20% 85%;
-    --input: 200 20% 85%;
-    --ring: 206 70% 45%;
+    --border: 45 20% 90%;
+    --input: 45 20% 90%;
+    --ring: 199 89% 48%;
     
-    --radius: 0.75rem;
+    --radius: 1.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 45 100% 99%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 206 70% 45%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 206 20% 95%;
-    --sidebar-accent-foreground: 206 70% 45%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 206 70% 45%;
+    --sidebar-accent: 199 40% 95%;
+    --sidebar-accent-foreground: 199 89% 40%;
+    --sidebar-border: 45 20% 92%;
+    --sidebar-ring: 199 89% 48%;
 
-    --chart-1: 206 70% 45%;
-    --chart-2: 178 57% 37%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
+    --chart-1: 199 89% 48%;
+    --chart-2: 353 96% 70%;
+    --chart-3: 142 71% 45%;
+    --chart-4: 43 96% 64%;
     --chart-5: 27 87% 67%;
   }
 }
@@ -61,9 +60,17 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
+    @apply font-headline tracking-tight;
   }
+}
+
+.bouncy-hover {
+  @apply transition-transform duration-300 hover:scale-105 active:scale-95;
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl;
 }

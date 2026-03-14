@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'EduSense AI - Autonomous Early Childhood Intelligence',
-  description: 'AI-powered platform for structured, multilingual educational insights.',
+  title: 'EduSense AI - Playful Learning Intelligence',
+  description: 'An AI-powered magical world for early childhood education and discovery.',
 };
 
 export default function RootLayout({
@@ -16,9 +16,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Belleza&family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@300..700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-background text-foreground">
+      <body className="font-body antialiased bg-background text-foreground selection:bg-primary/30">
         {children}
       </body>
     </html>
