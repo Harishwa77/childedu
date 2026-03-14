@@ -29,11 +29,24 @@ export interface Resource {
   targetStudentId?: string; // Optional link to a specific student
 }
 
+export interface ChildRegistrationInfo {
+  name: string;
+  className: string;
+  mentorName: string;
+}
+
 export default function Home() {
   const [activeRole, setActiveRole] = useState<Role>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Persist Parent Registration Info across role switches
+  const [parentSessionInfo, setParentSessionInfo] = useState<ChildRegistrationInfo>({
+    name: "Leo Johnson",
+    className: "Preschool Class B",
+    mentorName: "Ms. Clara"
+  });
+
   // Shared resources state between Teacher and Parent
   const [resources, setResources] = useState<Resource[]>([
     {
@@ -116,19 +129,25 @@ export default function Home() {
     },
   ]);
 
-  const handleRegisterChild = (name: string, className: string, mentorName: string) => {
+  const handleRegisterChild = (info: ChildRegistrationInfo) => {
+    setParentSessionInfo(info);
     setRoster(prev => {
-      const exists = prev.find(s => s.name.toLowerCase() === name.toLowerCase());
+      const exists = prev.find(s => s.name.toLowerCase() === info.name.toLowerCase());
       if (exists) {
-        return prev.map(s => s.id === exists.id ? { ...s, name, className, mentorName } : s);
+        return prev.map(s => s.id === exists.id ? { 
+          ...s, 
+          name: info.name, 
+          className: info.className, 
+          mentorName: info.mentorName 
+        } : s);
       }
       return [...prev, {
         id: `s${prev.length + 1}`,
-        name,
+        name: info.name,
         present: true,
         engagement: "Medium",
-        className,
-        mentorName,
+        className: info.className,
+        mentorName: info.mentorName,
         skills: { language: 50, numeracy: 50, social: 50, motor: 50 },
         history: [{ date: "May", score: 50 }]
       }];
@@ -155,6 +174,7 @@ export default function Home() {
             activeTab={activeTab} 
             resources={resources}
             roster={roster}
+            childInfo={parentSessionInfo}
             onRegisterChild={handleRegisterChild}
           />
         );

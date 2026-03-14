@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -12,7 +13,7 @@ import { generateParentalLearningInsights, ParentalLearningInsightsOutput } from
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardTab, Resource } from "@/app/page";
+import { DashboardTab, Resource, ChildRegistrationInfo } from "@/app/page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
@@ -26,29 +27,17 @@ interface ParentDashboardProps {
   activeTab?: DashboardTab;
   resources: Resource[];
   roster: Student[];
-  onRegisterChild: (name: string, className: string, mentorName: string) => void;
+  childInfo: ChildRegistrationInfo;
+  onRegisterChild: (info: ChildRegistrationInfo) => void;
 }
 
-interface ChildInfo {
-  name: string;
-  className: string;
-  mentorName: string;
-}
-
-export function ParentDashboard({ searchQuery, activeTab, resources, roster, onRegisterChild }: ParentDashboardProps) {
+export function ParentDashboard({ searchQuery, activeTab, resources, roster, childInfo, onRegisterChild }: ParentDashboardProps) {
   const [insights, setInsights] = useState<ParentalLearningInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
   const [completedActivities, setCompletedActivities] = useState<number[]>([]);
-  
-  // Child Profile State
-  const [childInfo, setChildInfo] = useState<ChildInfo>({
-    name: "Leo Johnson",
-    className: "Preschool Class B",
-    mentorName: "Ms. Clara"
-  });
   
   // Find child in roster for developmental data
   const childData = useMemo(() => {
@@ -124,10 +113,15 @@ export function ParentDashboard({ searchQuery, activeTab, resources, roster, onR
     }
   };
 
-  const [tempChildInfo, setTempChildInfo] = useState<ChildInfo>(childInfo);
+  const [tempChildInfo, setTempChildInfo] = useState<ChildRegistrationInfo>(childInfo);
+
+  // Sync temp state if the prop changes (though lifting state usually prevents this need)
+  useEffect(() => {
+    setTempChildInfo(childInfo);
+  }, [childInfo]);
+
   const handleSaveRegistration = () => {
-    setChildInfo(tempChildInfo);
-    onRegisterChild(tempChildInfo.name, tempChildInfo.className, tempChildInfo.mentorName);
+    onRegisterChild(tempChildInfo);
     setIsRegDialogOpen(false);
     toast({
       title: "Profile Updated",
