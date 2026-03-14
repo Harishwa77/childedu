@@ -29,7 +29,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   
   const { toast } = useToast();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const persistResource = (resourceData: any) => {
     if (!db || !user?.uid) {
@@ -40,8 +40,6 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
     const resourceId = resourceData.id;
     const docRef = doc(db, "educational_resources", resourceId);
     
-    // Add uploader context and authorization map for security rules
-    // We strictly use user.uid and do not fallback to "anonymous" to satisfy security rules
     const finalData = {
       ...resourceData,
       uploaderId: user.uid,
@@ -247,14 +245,7 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
   };
 
   const handleYoutubeSubmit = async () => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please wait for your session to initialize."
-      });
-      return;
-    }
+    if (!user) return;
 
     if (!youtubeUrl.trim() || !youtubeUrl.includes("youtube.com") && !youtubeUrl.includes("youtu.be")) {
       toast({
@@ -319,9 +310,16 @@ export function UploadModal({ onProcessed }: { onProcessed?: (data: any) => void
       }
     }}>
       <DialogTrigger asChild>
-        <Button className="gap-2 h-11 px-6 shadow-md hover:shadow-lg transition-all font-headline text-base bg-primary">
-          <Upload className="w-5 h-5" />
-          Add Resource
+        <Button 
+          disabled={!user || isUserLoading}
+          className="gap-2 h-11 px-6 shadow-md hover:shadow-lg transition-all font-headline text-base bg-primary"
+        >
+          {isUserLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Upload className="w-5 h-5" />
+          )}
+          {isUserLoading ? "Initializing..." : "Add Resource"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
