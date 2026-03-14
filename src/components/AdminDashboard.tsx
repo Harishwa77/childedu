@@ -1,7 +1,7 @@
 
 "use client";
 
-import { BarChart3, TrendingUp, Shield, Download, Users, FileBarChart, BrainCircuit, Globe } from "lucide-react";
+import { BarChart3, TrendingUp, Shield, Download, Users, FileBarChart, BrainCircuit, Globe, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,15 +9,15 @@ import {
   ChartTooltip, 
   ChartTooltipContent 
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, ResponsiveContainer, Line, LineChart } from "recharts";
 import { DashboardTab } from "@/app/page";
 
-const data = [
-  { month: "Jan", engagement: 65, resources: 40 },
-  { month: "Feb", engagement: 59, resources: 55 },
-  { month: "Mar", engagement: 80, resources: 72 },
-  { month: "Apr", engagement: 81, resources: 60 },
-  { month: "May", engagement: 95, resources: 85 },
+const trendData = [
+  { month: "Jan", engagement: 65, resources: 40, attendance: 88 },
+  { month: "Feb", engagement: 59, resources: 55, attendance: 92 },
+  { month: "Mar", engagement: 80, resources: 72, attendance: 85 },
+  { month: "Apr", engagement: 81, resources: 60, attendance: 94 },
+  { month: "May", engagement: 95, resources: 85, attendance: 97 },
 ];
 
 export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string, activeTab?: DashboardTab }) {
@@ -63,9 +63,9 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
           </Card>
           <Card className="border-none bg-blue-600 text-white">
             <CardContent className="p-6 space-y-2">
-              <Shield className="w-6 h-6 opacity-80" />
-              <p className="text-3xl font-bold font-headline">99.9%</p>
-              <p className="text-xs uppercase font-bold tracking-widest text-white/70">Uptime</p>
+              <Activity className="w-6 h-6 opacity-80" />
+              <p className="text-3xl font-bold font-headline">94.2%</p>
+              <p className="text-xs uppercase font-bold tracking-widest text-white/70">Avg Attendance</p>
             </CardContent>
           </Card>
         </div>
@@ -87,7 +87,7 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
                   engagement: { label: "Engagement", color: "hsl(var(--primary))" },
                   resources: { label: "Resources", color: "hsl(var(--accent))" }
                 }}>
-                  <BarChart data={data}>
+                  <BarChart data={trendData}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                     <ChartTooltip content={<ChartTooltipContent />} />
@@ -104,25 +104,32 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
           {(activeTab === "dashboard" || activeTab === "resources") && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="font-headline text-xl">Top Activity Categories</CardTitle>
-                <CardDescription>Distribution of content processed by EduSense AI</CardDescription>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-500" />
+                  <CardTitle className="font-headline text-xl">System-Wide Attendance</CardTitle>
+                </div>
+                <CardDescription>Daily participation trends across all active centers</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {[
-                  { name: "Tactile Play", val: 45, color: "bg-blue-500" },
-                  { name: "Numeracy", val: 30, color: "bg-accent" },
-                  { name: "Language Arts", val: 25, color: "bg-indigo-500" },
-                ].map(item => (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-body font-medium">{item.name}</span>
-                      <span className="text-muted-foreground">{item.val}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-accent/10 rounded-full">
-                      <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.val}%` }}></div>
-                    </div>
-                  </div>
-                ))}
+              <CardContent>
+                 <div className="h-[180px] w-full">
+                  <ChartContainer config={{
+                    attendance: { label: "Attendance %", color: "#10b981" }
+                  }}>
+                    <AreaChart data={trendData}>
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="month" hide />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="attendance" 
+                        stroke="var(--color-attendance)" 
+                        fill="var(--color-attendance)" 
+                        fillOpacity={0.1} 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ChartContainer>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -158,3 +165,4 @@ export function AdminDashboard({ searchQuery, activeTab }: { searchQuery: string
     </div>
   );
 }
+

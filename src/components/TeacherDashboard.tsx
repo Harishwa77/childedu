@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages } from "lucide-react";
+import { BookOpen, Users, Star, FileText, Video, Music, Lightbulb, Clock, ChevronRight, Sparkles, TrendingUp, BrainCircuit, Wand2, FilePlus, Loader2, Languages, CheckCircle2, XCircle, UserCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,20 @@ import { DashboardTab, Resource } from "@/app/page";
 import { generateLessonPlan, LessonPlanOutput } from "@/ai/flows/generate-lesson-plan";
 import { generateMagicMoment } from "@/ai/flows/generate-magic-moment-flow";
 import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface TeacherDashboardProps {
   searchQuery: string;
   activeTab?: DashboardTab;
   resources: Resource[];
   setResources: React.Dispatch<React.SetStateAction<Resource[]>>;
+}
+
+interface Student {
+  id: string;
+  name: string;
+  present: boolean;
+  engagement: "High" | "Medium" | "Low";
 }
 
 export function TeacherDashboard({ searchQuery, activeTab, resources, setResources }: TeacherDashboardProps) {
@@ -32,6 +40,15 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
   const [magicMomentUrl, setMagicMomentUrl] = useState<string | null>(null);
   const [planLanguage, setPlanLanguage] = useState<"English" | "Tamil" | "Hindi">("English");
 
+  // Roster State
+  const [roster, setRoster] = useState<Student[]>([
+    { id: "s1", name: "Leo Johnson", present: true, engagement: "High" },
+    { id: "s2", name: "Mia Wong", present: true, engagement: "Medium" },
+    { id: "s3", name: "Noah Smith", present: false, engagement: "Low" },
+    { id: "s4", name: "Ava Garcia", present: true, engagement: "High" },
+    { id: "s5", name: "Liam Chen", present: true, engagement: "High" },
+  ]);
+
   const filteredResources = useMemo(() => {
     if (!searchQuery.trim()) return resources;
     const query = searchQuery.toLowerCase();
@@ -41,6 +58,10 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
       res.keyActivities?.some((act: string) => act.toLowerCase().includes(query))
     );
   }, [resources, searchQuery]);
+
+  const toggleAttendance = (id: string) => {
+    setRoster(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
+  };
 
   const handleNewProcessed = (data: any) => {
     setResources(prev => [data, ...prev]);
@@ -89,6 +110,14 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     return <FileText className="w-5 h-5 text-emerald-600" />;
   };
 
+  const getEngagementBadge = (level: string) => {
+    switch (level) {
+      case "High": return <Badge className="bg-emerald-100 text-emerald-700 border-none">High Engagement</Badge>;
+      case "Medium": return <Badge className="bg-blue-100 text-blue-700 border-none">Steady</Badge>;
+      default: return <Badge className="bg-orange-100 text-orange-700 border-none">Low</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {activeTab === "dashboard" && (
@@ -98,7 +127,9 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
               <h2 className="text-3xl font-headline font-bold text-foreground">Teacher Hub</h2>
               <p className="text-muted-foreground font-body">Managing 24 students in Preschool Class B</p>
             </div>
-            <UploadModal onProcessed={handleNewProcessed} />
+            <div className="flex gap-2">
+              <UploadModal onProcessed={handleNewProcessed} />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -135,16 +166,16 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
             <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" /> Student Engagement
+                  <UserCheck className="w-5 h-5 text-primary" /> Today's Presence
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-2xl font-bold">High</p>
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Across all segments</p>
+                    <p className="text-2xl font-bold">{roster.filter(s => s.present).length}/{roster.length}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Students present</p>
                   </div>
-                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">+12% vs last week</Badge>
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">Live Update</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -156,7 +187,8 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
         {(activeTab === "dashboard" || activeTab === "resources") && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-headline font-bold">
+              <h3 className="text-xl font-headline font-bold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
                 {searchQuery ? `Search Results for "${searchQuery}"` : "Processed Resources"}
               </h3>
               <span className="text-xs text-muted-foreground font-body">{filteredResources.length} items found</span>
@@ -212,13 +244,47 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
 
         {(activeTab === "dashboard" || activeTab === "insights") && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <BrainCircuit className="w-6 h-6 text-primary" />
-              <h3 className="text-xl font-headline font-bold">Pedagogical Insights</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-6 h-6 text-primary" />
+                <h3 className="text-xl font-headline font-bold">Classroom Roster</h3>
+              </div>
+              <Badge variant="outline" className="font-body">Updated via AI Summary</Badge>
             </div>
             
+            <Card className="border-none shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="font-headline">Student Name</TableHead>
+                    <TableHead className="font-headline">Status</TableHead>
+                    <TableHead className="font-headline">AI Engagement</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {roster.map((student) => (
+                    <TableRow key={student.id} className="group hover:bg-accent/5">
+                      <TableCell className="font-medium font-body">{student.name}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => toggleAttendance(student.id)}
+                          className={student.present ? "text-emerald-600 hover:text-emerald-700" : "text-red-500 hover:text-red-600"}
+                        >
+                          {student.present ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
+                          {student.present ? "Present" : "Absent"}
+                        </Button>
+                      </TableCell>
+                      <TableCell>{getEngagementBadge(student.engagement)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+
             <Card className="bg-primary/5 border-primary/20">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" /> Weekly Skill Trends
                 </CardTitle>
@@ -238,23 +304,6 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
                 </div>
               </CardContent>
             </Card>
-
-            <div className="space-y-4">
-              <h4 className="text-lg font-headline font-bold flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-yellow-500" />
-                Suggested Activities
-              </h4>
-              <div className="space-y-4">
-                <Card className="bg-accent/5 border-accent/20">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="p-4 bg-white rounded-lg border border-accent/10 space-y-2">
-                      <h4 className="font-headline font-bold text-primary">Sensory Texture Sorting</h4>
-                      <p className="text-sm font-body text-muted-foreground">Introduce varying textures (sand, silk, bark) to enhance descriptive language skills.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -407,3 +456,4 @@ export function TeacherDashboard({ searchQuery, activeTab, resources, setResourc
     </div>
   );
 }
+

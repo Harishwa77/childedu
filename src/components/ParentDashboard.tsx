@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save } from "lucide-react";
+import { Heart, Activity, Book, Sparkles, Home, ChevronRight, Clock, Volume2, Loader2, BrainCircuit, Target, UserCircle, School, Search, FileText, Video, Music, Edit3, Save, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardTab, Resource } from "@/app/page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 interface ParentDashboardProps {
   searchQuery: string;
@@ -35,6 +37,7 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [isRegDialogOpen, setIsRegDialogOpen] = useState(false);
+  const [completedActivities, setCompletedActivities] = useState<number[]>([]);
   
   // Child Profile State
   const [childInfo, setChildInfo] = useState<ChildInfo>({
@@ -74,6 +77,20 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
     }
     fetchInsights();
   }, [childInfo.name]);
+
+  const toggleActivity = (idx: number) => {
+    if (completedActivities.includes(idx)) {
+      setCompletedActivities(prev => prev.filter(i => i !== idx));
+    } else {
+      setCompletedActivities(prev => [...prev, idx]);
+      toast({
+        title: "Activity Completed! 🎉",
+        description: "Great job supporting Leo's learning journey at home.",
+      });
+    }
+  };
+
+  const connectionScore = Math.min(100, (completedActivities.length / (insights?.homeActivitySuggestions.length || 1)) * 100);
 
   const handleListen = async () => {
     if (!insights || isSpeaking) return;
@@ -223,17 +240,23 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
+          {/* Connection Stats */}
           <div className="grid grid-cols-1 gap-6">
             <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6 flex items-center gap-6">
-                <div className="p-4 bg-emerald-50 rounded-2xl">
-                  <Activity className="w-8 h-8 text-emerald-600" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-headline uppercase tracking-widest text-muted-foreground">Home-School Connection</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <div className="p-4 bg-emerald-50 rounded-2xl">
+                    <Activity className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold font-headline">{connectionScore}%</p>
+                    <p className="text-xs text-muted-foreground font-body">Activity Alignment</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Participation</p>
-                  <p className="text-2xl font-bold font-headline">94% Active</p>
-                </div>
+                <Progress value={connectionScore} className="h-2" />
               </CardContent>
             </Card>
             <Card className="hover:shadow-md transition-all">
@@ -242,8 +265,8 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
                   <Book className="w-8 h-8 text-blue-600" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Milestones</p>
-                  <p className="text-2xl font-bold font-headline">3 New Badges</p>
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Recent Milestones</p>
+                  <p className="text-2xl font-bold font-headline">Scientific Inquiry</p>
                 </div>
               </CardContent>
             </Card>
@@ -335,15 +358,30 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
                 insights?.homeActivitySuggestions
                   .filter(act => !searchQuery || act.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((act, idx) => (
-                  <Card key={idx} className="group hover:border-accent transition-all cursor-pointer">
+                  <Card 
+                    key={idx} 
+                    className={cn(
+                      "group hover:border-accent transition-all cursor-pointer relative overflow-hidden",
+                      completedActivities.includes(idx) ? "bg-accent/10 border-accent" : ""
+                    )}
+                    onClick={() => toggleActivity(idx)}
+                  >
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-center justify-between">
-                        <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent group-hover:text-white transition-colors">
-                          <ChevronRight className="w-4 h-4" />
+                        <div className={cn(
+                          "p-2 rounded-lg transition-colors",
+                          completedActivities.includes(idx) ? "bg-accent text-white" : "bg-accent/10 group-hover:bg-accent group-hover:text-white"
+                        )}>
+                          {completedActivities.includes(idx) ? <CheckCircle2 className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </div>
-                        <Badge variant="outline" className="text-[10px] opacity-60">Activity {idx + 1}</Badge>
+                        <Badge variant="outline" className="text-[10px] opacity-60">
+                          {completedActivities.includes(idx) ? "Completed" : `Activity ${idx + 1}`}
+                        </Badge>
                       </div>
-                      <p className="font-body text-base leading-snug">
+                      <p className={cn(
+                        "font-body text-base leading-snug transition-colors",
+                        completedActivities.includes(idx) ? "text-accent font-bold" : "text-foreground"
+                      )}>
                         {act}
                       </p>
                     </CardContent>
@@ -353,34 +391,6 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
             </div>
           </div>
         </div>
-      )}
-
-      {/* Recent Updates / Resources Tab */}
-      {(activeTab === "dashboard" || activeTab === "resources") && (
-        <Card className="border-accent/10 bg-accent/5">
-          <CardHeader>
-            <CardTitle className="text-xl font-headline">Recent Moments</CardTitle>
-            <CardDescription>Classroom photos and videos shared this week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="min-w-[180px] space-y-2">
-                  <div className="aspect-[4/3] bg-muted rounded-xl overflow-hidden relative border shadow-sm">
-                    <img src={`https://picsum.photos/seed/moment${i}/400/300`} alt="Activity" className="object-cover w-full h-full" />
-                  </div>
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {i} day{i > 1 ? 's' : ''} ago
-                    </div>
-                    <Badge variant="secondary" className="text-[9px] uppercase">Activity</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       )}
 
       {/* Shared Resource Modal */}
@@ -420,3 +430,4 @@ export function ParentDashboard({ searchQuery, activeTab, resources }: ParentDas
     </div>
   );
 }
+
