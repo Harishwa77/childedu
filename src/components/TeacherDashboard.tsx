@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -178,7 +177,7 @@ export function TeacherDashboard({
                       </CardHeader>
                       <CardFooter className="bg-muted/30 p-4 flex justify-between">
                         <Badge variant="outline" className="border-primary/20 text-primary">{res.aiContent?.targetAge || "3-5 Years"}</Badge>
-                        <Button size="sm" onClick={() => setSelectedResource(res)}>View Details</Button>
+                        <Button size="sm" onClick={() => setSelectedResource({ ...res, originalSummary: res.originalSummary || res.summary })}>View Details</Button>
                       </CardFooter>
                     </Card>
                   ))}
@@ -197,13 +196,15 @@ export function TeacherDashboard({
           <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-3xl font-headline">{selectedResource.fileName}</DialogTitle>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-primary">{selectedResource.aiContent?.targetAge}</Badge>
+                <div className="flex justify-between items-start pr-8">
+                  <DialogTitle className="text-3xl font-headline">{selectedResource.fileName}</DialogTitle>
                   <TranslationSelector 
-                    content={selectedResource.summary || ""} 
+                    originalContent={selectedResource.originalSummary || ""} 
                     onTranslate={(t) => setSelectedResource({...selectedResource, summary: t})}
                   />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-primary">{selectedResource.aiContent?.targetAge}</Badge>
                 </div>
               </DialogHeader>
               <Tabs defaultValue="overview" className="mt-6">

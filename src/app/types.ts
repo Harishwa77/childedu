@@ -14,6 +14,7 @@ export interface Resource extends Partial<ProcessEducationalContentOutput> {
   timestamp: string;
   thumbnailUrl?: string;
   aiContent?: ProcessEducationalContentOutput;
+  originalSummary?: string; // Anchor for high-fidelity translation
 }
 
 export interface Insight {

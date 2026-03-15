@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Languages, Loader2, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ const languages = [
   { id: "Malayalam", label: "Malayalam (മലയാളം)" },
   { id: "Punjabi", label: "Punjabi (ਪੰਜਾਬੀ)" },
   { id: "Odia", label: "Odia (ଓੜିଆ)" },
-  { id: "Assamese", label: "Assamese (ଅসমীயா)" },
+  { id: "Assamese", label: "Assamese (অসমীয়া)" },
   { id: "Urdu", label: "Urdu (اردو)" },
 ] as const;
 
@@ -39,43 +39,38 @@ export function TranslationSelector({ originalContent, onTranslate, className }:
   const { toast } = useToast();
 
   const handleTranslate = async (target: LanguageId) => {
-    if (target === currentLang || !originalContent) {
-      if (target === "English") {
-        onTranslate(originalContent);
-        setCurrentLang("English");
-      }
+    if (!originalContent) return;
+    
+    // If switching to English, always restore the original content instantly
+    if (target === "English") {
+      onTranslate(originalContent);
+      setCurrentLang("English");
       return;
     }
+
+    if (target === currentLang) return;
     
     setIsTranslating(true);
     try {
-      if (target === "English") {
-        onTranslate(originalContent);
-        setCurrentLang("English");
-        setIsTranslating(false);
-        return;
-      }
-
       const result = await translateAiInsights({
         content: originalContent,
         targetLanguage: target as any
       });
       
-      if (result.translatedContent === originalContent && target !== "English") {
+      onTranslate(result.translatedContent);
+      setCurrentLang(target);
+      
+      if (result.translatedContent === originalContent) {
         toast({
-          title: "Translation Service Busy",
-          description: "Our AI is currently at capacity. Displaying original text for now.",
-          variant: "default"
+          title: "Notice",
+          description: "Displaying original text (Translation skipped or returned original).",
         });
-      } else {
-        onTranslate(result.translatedContent);
-        setCurrentLang(target);
       }
     } catch (error) {
       console.error("Translation Error:", error);
       toast({
         title: "Translation Error",
-        description: "Could not translate content at this time.",
+        description: "Could not translate content at this time. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -89,24 +84,30 @@ export function TranslationSelector({ originalContent, onTranslate, className }:
         <Button 
           variant="outline" 
           size="sm" 
-          className={cn("gap-2 h-8 text-[10px] font-bold uppercase tracking-wider rounded-full border-primary/20 hover:bg-primary/5", className)}
+          className={cn("gap-2 h-9 text-xs font-bold rounded-full border-primary/20 hover:bg-primary/5 px-4 shadow-sm", className)}
           disabled={isTranslating || !originalContent}
         >
-          {isTranslating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3 text-primary" />}
+          {isTranslating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-4 h-4 text-primary" />}
           {languages.find(l => l.id === currentLang)?.label || currentLang}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+      <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 shadow-xl border-none">
+        <div className="p-2 border-b mb-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Language</p>
+        </div>
         <ScrollArea className="h-72">
           <div className="space-y-1">
             {languages.map((lang) => (
               <DropdownMenuItem 
                 key={lang.id} 
                 onClick={() => handleTranslate(lang.id)}
-                className="flex items-center justify-between rounded-xl cursor-pointer"
+                className={cn(
+                  "flex items-center justify-between rounded-xl cursor-pointer p-3",
+                  currentLang === lang.id ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                )}
               >
-                <span className="font-body">{lang.label}</span>
-                {currentLang === lang.id && <Check className="w-3 h-3 text-primary" />}
+                <span className="font-body text-sm">{lang.label}</span>
+                {currentLang === lang.id && <Check className="w-4 h-4" />}
               </DropdownMenuItem>
             ))}
           </div>

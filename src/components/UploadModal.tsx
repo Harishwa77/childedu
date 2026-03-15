@@ -11,7 +11,7 @@ import { processEducationalContent } from "@/ai/flows/process-educational-conten
 import { summarizeYoutubeLink } from "@/ai/flows/summarize-youtube-link";
 import { voiceToLesson } from "@/ai/flows/voice-to-lesson-flow";
 import { useToast } from "@/hooks/use-toast";
-import { Resource } from "@/app/page";
+import { Resource } from "@/app/types";
 
 interface UploadModalProps {
   onUpload: (res: Resource) => void;
@@ -91,6 +91,7 @@ export function UploadModal({ onUpload }: UploadModalProps) {
           id: resourceId,
           fileName: `Voice Plan: ${result.lessonPlan.title}`,
           summary: result.parentSummary,
+          originalSummary: result.parentSummary,
           keyActivities: result.lessonPlan.steps,
           transcript: result.transcript,
           fileType: "audio/wav",
@@ -174,6 +175,7 @@ export function UploadModal({ onUpload }: UploadModalProps) {
           const resourceData: Resource = {
             id: resourceId,
             ...result,
+            originalSummary: result.summary,
             aiContent: {
               summary: result.summary,
               keyConcepts: result.keyConcepts,
@@ -240,6 +242,7 @@ export function UploadModal({ onUpload }: UploadModalProps) {
       const resourceData: Resource = {
         id: resourceId,
         ...result,
+        originalSummary: result.summary,
         fileName: `YouTube Video`,
         fileType: "video/youtube",
         timestamp: new Date().toISOString()
