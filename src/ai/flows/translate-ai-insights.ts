@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for translating AI-generated summaries, insights, or recommendations
- * into 12+ Indian languages.
+ * into 12+ Indian languages with high pedagogical accuracy.
  *
  * - translateAiInsights - A function that handles the translation process.
  * - TranslateAiInsightsInput - The input type for the translateAiInsights function.
@@ -46,12 +46,24 @@ const prompt = ai.definePrompt({
   name: 'translateAiInsightsPrompt',
   input: {schema: TranslateAiInsightsInputSchema},
   output: {schema: TranslateAiInsightsOutputSchema},
-  prompt: `You are a highly skilled multilingual translator specialized in Indian languages and educational terminology. 
-Your task is to accurately and naturally translate the provided educational text content into the specified target language. 
-Maintain the encouraging and professional tone suitable for teachers and parents.
+  prompt: `You are a highly skilled multilingual translator specialized in Indian languages and early childhood educational terminology. 
 
-Content to translate: {{{content}}}
-Target Language: {{{targetLanguage}}}`,
+Your task is to accurately and naturally translate the provided text into the specified target language.
+
+Target Language: {{{targetLanguage}}}
+
+Context: This content is for an early childhood education platform (EduSense AI). The audience is either a teacher or a parent. 
+
+INSTRUCTIONS:
+1. Translate the following content while maintaining its encouraging, professional, and whimsical tone.
+2. Use natural-sounding phrasing in the target language (avoid overly literal machine-translation feel).
+3. Preserve the meaning of educational terms (e.g., "numeracy", "motor skills") using commonly understood terms in the target culture.
+4. ONLY return the translated text. Do not include any explanations or conversational filler.
+
+Content to translate:
+---
+{{{content}}}
+---`,
 });
 
 const translateAiInsightsFlow = ai.defineFlow(

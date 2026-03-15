@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Languages, Loader2, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -20,36 +20,48 @@ const languages = [
   { id: "Kannada", label: "Kannada (ಕನ್ನಡ)" },
   { id: "Malayalam", label: "Malayalam (മലയാളം)" },
   { id: "Punjabi", label: "Punjabi (ਪੰਜਾਬੀ)" },
-  { id: "Odia", label: "Odia (ଓੜிଆ)" },
-  { id: "Assamese", label: "Assamese (অসমীயா)" },
+  { id: "Odia", label: "Odia (ଓੜିଆ)" },
+  { id: "Assamese", label: "Assamese (ଅসমীயா)" },
   { id: "Urdu", label: "Urdu (اردو)" },
 ] as const;
 
 type LanguageId = typeof languages[number]["id"];
 
 interface TranslationSelectorProps {
-  content: string;
+  originalContent: string;
   onTranslate: (translated: string) => void;
   className?: string;
 }
 
-export function TranslationSelector({ content, onTranslate, className }: TranslationSelectorProps) {
+export function TranslationSelector({ originalContent, onTranslate, className }: TranslationSelectorProps) {
   const [currentLang, setCurrentLang] = useState<LanguageId>("English");
   const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
 
   const handleTranslate = async (target: LanguageId) => {
-    if (target === currentLang || !content) return;
+    if (target === currentLang || !originalContent) {
+      if (target === "English") {
+        onTranslate(originalContent);
+        setCurrentLang("English");
+      }
+      return;
+    }
     
     setIsTranslating(true);
     try {
+      if (target === "English") {
+        onTranslate(originalContent);
+        setCurrentLang("English");
+        setIsTranslating(false);
+        return;
+      }
+
       const result = await translateAiInsights({
-        content: content,
+        content: originalContent,
         targetLanguage: target as any
       });
       
-      // If the result is the same as input, it likely hit the fallback (quota)
-      if (result.translatedContent === content && target !== "English") {
+      if (result.translatedContent === originalContent && target !== "English") {
         toast({
           title: "Translation Service Busy",
           description: "Our AI is currently at capacity. Displaying original text for now.",
@@ -77,23 +89,23 @@ export function TranslationSelector({ content, onTranslate, className }: Transla
         <Button 
           variant="outline" 
           size="sm" 
-          className={cn("gap-2 h-8 text-[10px] font-bold uppercase tracking-wider", className)}
-          disabled={isTranslating || !content}
+          className={cn("gap-2 h-8 text-[10px] font-bold uppercase tracking-wider rounded-full border-primary/20 hover:bg-primary/5", className)}
+          disabled={isTranslating || !originalContent}
         >
-          {isTranslating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3" />}
+          {isTranslating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Languages className="w-3 h-3 text-primary" />}
           {languages.find(l => l.id === currentLang)?.label || currentLang}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
         <ScrollArea className="h-72">
-          <div className="p-1">
+          <div className="space-y-1">
             {languages.map((lang) => (
               <DropdownMenuItem 
                 key={lang.id} 
                 onClick={() => handleTranslate(lang.id)}
-                className="flex items-center justify-between"
+                className="flex items-center justify-between rounded-xl cursor-pointer"
               >
-                <span>{lang.label}</span>
+                <span className="font-body">{lang.label}</span>
                 {currentLang === lang.id && <Check className="w-3 h-3 text-primary" />}
               </DropdownMenuItem>
             ))}
