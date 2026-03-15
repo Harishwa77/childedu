@@ -41,7 +41,7 @@ export async function askEducationalAIAssistant(
 
 const askEducationalAIAssistantPrompt = ai.definePrompt({
   name: 'askEducationalAIAssistantPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: AskEducationalAIAssistantInputSchema },
   output: { schema: AskEducationalAIAssistantOutputSchema },
   prompt: `You are an AI chatbot assistant for an early childhood education platform. Your goal is to provide accurate, context-aware answers to questions about curriculum, specific child learning, or general program analytics.

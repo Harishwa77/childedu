@@ -72,7 +72,7 @@ export async function processEducationalContent(
 
 const processPrompt = ai.definePrompt({
   name: 'processEducationalContentPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: ProcessEducationalContentInputSchema },
   output: { schema: ProcessEducationalContentOutputSchema },
   prompt: `You are an expert AI Autonomous Intelligence Layer for early childhood education, specialized in transforming raw content into a structured Knowledge Graph.
