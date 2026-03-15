@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview This file implements a Genkit flow for an AI chatbot assistant.
+ * @fileOverview This file implements a Genkit flow for an AI chatbot assistant with quota resilience.
  *
  * - askEducationalAIAssistant - A function that handles user questions using a RAG system.
  * - AskEducationalAIAssistantInput - The input type for the askEducationalAIAssistant function.
@@ -41,6 +41,7 @@ export async function askEducationalAIAssistant(
 
 const askEducationalAIAssistantPrompt = ai.definePrompt({
   name: 'askEducationalAIAssistantPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: AskEducationalAIAssistantInputSchema },
   output: { schema: AskEducationalAIAssistantOutputSchema },
   prompt: `You are an AI chatbot assistant for an early childhood education platform. Your goal is to provide accurate, context-aware answers to questions about curriculum, specific child learning, or general program analytics.
@@ -73,12 +74,14 @@ const askEducationalAIAssistantFlow = ai.defineFlow(
       // Handle quota/rate limit errors gracefully
       if (error.message?.includes('429') || error.message?.includes('quota')) {
         return {
-          answer: "I'm currently processing a lot of requests from other teachers and parents! I need a tiny break to catch my breath. Please try asking your question again in about 30 seconds. I'll be ready to help then!",
+          answer: "I'm currently helping a lot of other teachers and parents! I need a tiny 30-second break to catch my breath. Please try asking your question again in a moment. I'll be ready to help then!",
         };
       }
       // Re-throw other unexpected errors
       console.error('AI Assistant Flow Error:', error);
-      throw error;
+      return {
+        answer: "I'm having a little trouble connecting to my brain right now! Please try asking again in a few seconds."
+      };
     }
   }
 );

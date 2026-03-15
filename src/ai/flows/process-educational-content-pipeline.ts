@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview This file implements a master Genkit flow for the EduSense AI processing pipeline.
@@ -73,7 +72,7 @@ export async function processEducationalContent(
 
 const processPrompt = ai.definePrompt({
   name: 'processEducationalContentPrompt',
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: ProcessEducationalContentInputSchema },
   output: { schema: ProcessEducationalContentOutputSchema },
   prompt: `You are an expert AI Autonomous Intelligence Layer for early childhood education, specialized in transforming raw content into a structured Knowledge Graph.
@@ -106,10 +105,18 @@ const processEducationalContentFlow = ai.defineFlow(
     outputSchema: ProcessEducationalContentOutputSchema,
   },
   async (input) => {
-    const { output } = await processPrompt(input);
-    if (!output) {
-      throw new Error('Autonomous AI pipeline failed to generate results.');
+    try {
+      const { output } = await processPrompt(input);
+      if (!output) {
+        throw new Error('Autonomous AI pipeline failed to generate results.');
+      }
+      return output!;
+    } catch (error: any) {
+      // Check for quota error
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        throw new Error("AI Processing Quota Exceeded. Please try again in 1 minute.");
+      }
+      throw error;
     }
-    return output!;
   }
 );

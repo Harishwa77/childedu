@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for translating AI-generated summaries, insights, or recommendations
- * into 12+ Indian languages with high pedagogical accuracy.
+ * into 12+ Indian languages with high pedagogical accuracy and quota resilience.
  *
  * - translateAiInsights - A function that handles the translation process.
  * - TranslateAiInsightsInput - The input type for the translateAiInsights function.
@@ -74,20 +74,21 @@ const translateAiInsightsFlow = ai.defineFlow(
   },
   async input => {
     try {
+      // If English is selected, return original immediately
+      if (input.targetLanguage === 'English') {
+        return { translatedContent: input.content };
+      }
+
       const {output} = await prompt(input);
       if (!output) {
         throw new Error('Failed to translate content.');
       }
       return output;
     } catch (error: any) {
-      // If quota is hit (429), return the original content as a fallback
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
-        console.warn("Translation quota exceeded, falling back to original content.");
-        return { translatedContent: input.content };
-      }
-      // For other errors, log and rethrow
-      console.error("Translation Flow Error:", error);
-      throw error;
+      // If quota is hit (429) or any other AI error, return the original content as a fallback
+      // This ensures the UI doesn't break even if the AI service is busy.
+      console.warn("Translation service unavailable or quota exceeded. Falling back to original content.", error.message);
+      return { translatedContent: input.content };
     }
   }
 );
