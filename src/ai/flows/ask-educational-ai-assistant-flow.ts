@@ -63,7 +63,22 @@ const askEducationalAIAssistantFlow = ai.defineFlow(
     outputSchema: AskEducationalAIAssistantOutputSchema,
   },
   async (input) => {
-    const { output } = await askEducationalAIAssistantPrompt(input);
-    return output!;
+    try {
+      const { output } = await askEducationalAIAssistantPrompt(input);
+      if (!output) {
+        throw new Error('Autonomous AI failed to generate an answer.');
+      }
+      return output;
+    } catch (error: any) {
+      // Handle quota/rate limit errors gracefully
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        return {
+          answer: "I'm currently processing a lot of requests from other teachers and parents! I need a tiny break to catch my breath. Please try asking your question again in about 30 seconds. I'll be ready to help then!",
+        };
+      }
+      // Re-throw other unexpected errors
+      console.error('AI Assistant Flow Error:', error);
+      throw error;
+    }
   }
 );
