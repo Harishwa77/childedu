@@ -15,7 +15,7 @@ const languages = [
   { id: "Tamil", label: "Tamil (தமிழ்)" },
   { id: "Telugu", label: "Telugu (తెలుగు)" },
   { id: "Bengali", label: "Bengali (বাংলা)" },
-  { id: "Marathi", label: "Marathi (मराठी)" },
+  { id: "Marathi", label: "Marathi (मরাঠী)" },
   { id: "Gujarati", label: "Gujarati (ગુજરાતી)" },
   { id: "Kannada", label: "Kannada (ಕನ್ನಡ)" },
   { id: "Malayalam", label: "Malayalam (മലയാളം)" },
